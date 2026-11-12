@@ -1,0 +1,45 @@
+/* Design tokens: every colour, radius, shadow and spacing value the app uses. */
+:root {
+  --canvas: #f6f8f6;
+  --surface: #ffffff;
+  --surface-2: #fbfcfb;
+  --ink: #202722;
+  --muted: #59655e;     /* 6.09:1 on white */
+  --muted-2: #68766e;   /* 4.77:1 on white */
+  --line: #e4ebe6;
+
+  --mint: #c8ffe7;
+  --mint-soft: #e9fff3;
+  --lilac: #e9d9ff;
+  --lilac-soft: #f6efff;
+  --sky: #d9efff;
+  --sky-soft: #eef7ff;
+  --butter: #fff1b8;
+  --butter-soft: #fff9e1;
+
+  --danger: #a53940;
+  --danger-bg: #fff1f1;
+  --focus: #27785a;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --shadow: 0 10px 30px rgba(30, 48, 35, 0.035), 0 2px 8px rgba(30, 48, 35, 0.02);
+
+  /* One spacing scale for the whole app: gaps between panels, padding inside them, list rows. */
+  --gap: 24px;        /* between panels and page sections */
+  --pad: 24px;        /* inside every panel */
+  --row: 14px;        /* top/bottom padding of a list row */
+  --head: 18px;       /* under a panel's title */
+
+  --sidebar: 246px;
+  --font: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
+}
+
+@media (max-width: 980px) {
+  :root { --sidebar: 210px; }
+}
+@media (max-width: 700px) {
+  :root { --sidebar: 0px; --gap: 16px; --pad: 18px; --row: 12px; --head: 14px; }
+}

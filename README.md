@@ -18,6 +18,17 @@ python run.py                         # API on http://127.0.0.1:5050
 
 Check it's up: <http://127.0.0.1:5050/api/v1/health>. API docs: <http://127.0.0.1:5050/api/v1/docs>.
 
+The web app is React + Vite in `frontend/` (Node 24 LTS recommended; 22.22 or newer works). Start the API first;
+the web app forwards `/api` calls to it.
+
+```bash
+cd frontend
+npm install        # once, and after package.json changes
+npm test           # run the tests
+npm run lint       # check the code style
+npm run dev        # web app on http://127.0.0.1:5173
+```
+
 ## License
 
 Quest-Ed is free software under the
