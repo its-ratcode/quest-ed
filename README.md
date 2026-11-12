@@ -5,6 +5,19 @@ responsibility through gamified tasks and rewards.
 
 > **Status:** early development. Not ready to use yet.
 
+## Development
+
+The API is a Flask app in `backend/` (Python 3.11 or newer).
+
+```bash
+cd backend
+pip install -r requirements-dev.txt   # once
+python -m pytest                      # run the tests
+python run.py                         # API on http://127.0.0.1:5050
+```
+
+Check it's up: <http://127.0.0.1:5050/api/v1/health>. API docs: <http://127.0.0.1:5050/api/v1/docs>.
+
 ## License
 
 Quest-Ed is free software under the

@@ -2,3 +2,13 @@
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Backend local data and secrets
+backend/instance/
+backend/.env
