@@ -21,13 +21,16 @@ def build_config(env_name):
     config = {
         "APP_ENV": env_name,
         "SECRET_KEY": os.environ.get("SECRET_KEY", DEV_SECRET),
+        # Empty means a SQLite file in backend/instance/ (see create_app).
+        "SQLALCHEMY_DATABASE_URI": os.environ.get("DATABASE_URL"),
+        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
         "ENABLE_API_DOCS": True,
         "RESTX_MASK_SWAGGER": False,
         "RESTX_ERROR_404_HELP": False,
     }
 
     if env_name == "testing":
-        config.update(TESTING=True, ENABLE_API_DOCS=False)
+        config.update(TESTING=True, ENABLE_API_DOCS=False, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
     elif env_name == "production":
         if not os.environ.get("SECRET_KEY"):
             raise RuntimeError("Production requires the SECRET_KEY environment variable.")

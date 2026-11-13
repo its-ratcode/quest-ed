@@ -18,6 +18,18 @@ python run.py                         # API on http://127.0.0.1:5050
 
 Check it's up: <http://127.0.0.1:5050/api/v1/health>. API docs: <http://127.0.0.1:5050/api/v1/docs>.
 
+The database is SQLite (`backend/instance/quest_ed.db`), built and updated by migrations:
+
+```bash
+flask --app run db upgrade                     # create or update the database
+flask --app run db migrate -m "what changed"   # after changing a model: write a new migration
+flask --app run db check                       # are the models and migrations in sync?
+```
+
+On Windows machines whose Application Control blocks SQLAlchemy's compiled files,
+`backend/pure_sqlalchemy.py` makes SQLAlchemy use its plain-Python copies instead
+(set `QUESTED_USE_COMPILED_SQLALCHEMY=1` to turn that off).
+
 The web app is React + Vite in `frontend/` (Node 24 LTS recommended; 22.22 or newer works). Start the API first;
 the web app forwards `/api` calls to it.
 

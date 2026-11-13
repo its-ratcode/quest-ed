@@ -1,6 +1,7 @@
 """Development server: python run.py  (or: flask --app run run)."""
 import os
 
+import pure_sqlalchemy  # noqa: F401  must come before anything that imports SQLAlchemy
 from app import create_app
 
 app = create_app()
