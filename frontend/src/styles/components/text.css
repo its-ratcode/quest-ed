@@ -1,0 +1,7 @@
+/* Text helpers and full-page loading. */
+.h3 { font-size: 18px; line-height: 1.35; letter-spacing: -0.3px; }
+.text-2 { color: var(--muted); }
+.small-text { font-size: 13px; }
+
+.loading-text { color: var(--muted); font-size: 13px; padding: 8px 0; }
+.full-center { min-height: 100vh; display: grid; place-items: center; padding: 16px; }

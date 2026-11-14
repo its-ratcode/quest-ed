@@ -1,0 +1,6 @@
+/* Messages inside a page: <div class="alert-soft error">, info, success or warn. */
+.alert-soft { border-radius: 12px; padding: 12px 14px; font-size: 12px; }
+.alert-soft.error { background: var(--danger-bg); color: var(--danger); }
+.alert-soft.info { background: #f2f6f2; color: #39483e; }
+.alert-soft.success { background: #e0faed; color: #1c6948; }
+.alert-soft.warn { background: #fff3ca; color: #6d5011; }

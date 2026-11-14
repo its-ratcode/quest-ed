@@ -1,0 +1,26 @@
+/* Form fields: labels, inputs and selects, hints. Errors use Bootstrap's .invalid-feedback. */
+.form-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #39483e;
+  margin-bottom: 6px;
+}
+.form-control,
+.form-select {
+  min-height: 46px;
+  background-color: #fff;
+  border: 1px solid #d9e2da;
+  border-radius: 12px;
+  color: var(--ink);
+  padding: 0 13px;
+  font-size: 14px;
+}
+textarea.form-control { padding: 12px 13px; min-height: 90px; }
+.form-control:focus,
+.form-select:focus {
+  border-color: #4b9571;
+  box-shadow: 0 0 0 3px #d4f4e2;
+  outline: none;
+}
+.form-control::placeholder { color: #66736a; }
+.form-text { font-size: 11px; color: var(--muted); }

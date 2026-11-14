@@ -1,0 +1,11 @@
+/* Panels: .card (add .pad for padding) and .card-soft (always padded). */
+.card,
+.card-soft {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.card.pad,
+.card-soft { padding: var(--pad); }

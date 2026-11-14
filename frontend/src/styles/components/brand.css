@@ -1,0 +1,23 @@
+/* The logo: a mint tile with the sparkle icon, and the name. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px 22px;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.7px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.brand:hover { text-decoration: none; color: var(--ink); }
+.brand-mark {
+  width: 39px;
+  height: 39px;
+  background: var(--mint);
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  flex: none;
+}
