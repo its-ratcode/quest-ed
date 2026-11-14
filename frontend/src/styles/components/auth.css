@@ -1,0 +1,25 @@
+/* Sign-in and sign-up pages: a centred card on a mint band. */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: linear-gradient(180deg, var(--mint) 0, var(--mint) 220px, var(--canvas) 220px);
+}
+.auth-card { width: min(100%, 420px); }
+.auth-card.card-soft { border-radius: 23px; padding: 28px; }
+.auth-card h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin: 0;
+}
+/* On the mint band the logo tile is white, so it stays visible. */
+.auth-wrap .brand-mark { background: #fff; box-shadow: 0 4px 14px #1d33201a; }
+
+@media (max-width: 700px) {
+  .auth-card.card-soft { padding: 22px; }
+}

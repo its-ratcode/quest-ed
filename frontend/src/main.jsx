@@ -10,6 +10,7 @@ import './styles/components/cards.css'
 import './styles/components/alerts.css'
 import './styles/components/tabs.css'
 import './styles/components/text.css'
+import './styles/components/auth.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
