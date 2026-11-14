@@ -1,6 +1,7 @@
 """Flask extensions, created once and connected to the app in create_app()."""
 import sqlite3
 
+from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData, event
@@ -18,6 +19,7 @@ NAMING_CONVENTION = {
 
 db = SQLAlchemy(metadata=MetaData(naming_convention=NAMING_CONVENTION))
 migrate = Migrate(render_as_batch=True)
+jwt = JWTManager()
 
 
 @event.listens_for(Engine, "connect")

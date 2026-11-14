@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask
 
 from .config import build_config
-from .extensions import db, migrate
+from .extensions import db, jwt, migrate
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -25,7 +25,9 @@ def create_app(config_name=None, overrides=None):
 
     db.init_app(app)
     migrate.init_app(app, db, directory=os.path.join(BACKEND_DIR, "migrations"))
+    jwt.init_app(app)
     from . import models  # noqa: F401  registers the tables with SQLAlchemy
+    from .core import security  # noqa: F401  registers how session tokens map to users
 
     from .api import create_api_blueprint
 
