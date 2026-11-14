@@ -1,0 +1,22 @@
+/* Round pictures: <span class="avatar sm|lg|xl tone-…">. */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  font-size: 21px;
+  line-height: 1;
+  background: var(--mint);
+  width: 42px;
+  height: 42px;
+}
+.avatar.sm { width: 30px; height: 30px; font-size: 15px; }
+.avatar.lg { width: 52px; height: 52px; font-size: 26px; }
+.avatar.xl { width: 70px; height: 70px; font-size: 35px; }
+.avatar.tone-mint { background: var(--mint); }
+.avatar.tone-lilac { background: var(--lilac); }
+.avatar.tone-sky { background: var(--sky); }
+.avatar.tone-butter { background: var(--butter); }
+/* Grown-ups' initials on grey. */
+.avatar.tone-sam { background: #e9e9e5; font-size: 14px; font-weight: 900; }

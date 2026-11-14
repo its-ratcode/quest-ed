@@ -1,12 +1,14 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
+import DashboardLayout from './components/layout/DashboardLayout'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
+import MorePage from './pages/MorePage'
 import { RedirectIfAuthenticated, RequireAuth } from './routes/guards'
 
-/** Every page in the app. Pages under <RequireAuth> need a session. */
+/** Every page in the app. Pages under <RequireAuth> need a session and share the app layout. */
 export function AppRoutes() {
   return (
     <Routes>
@@ -14,7 +16,10 @@ export function AppRoutes() {
       <Route path="/login" element={<RedirectIfAuthenticated><LoginPage /></RedirectIfAuthenticated>} />
       <Route path="/register" element={<RedirectIfAuthenticated><RegisterPage /></RedirectIfAuthenticated>} />
       <Route element={<RequireAuth />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="more" element={<MorePage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

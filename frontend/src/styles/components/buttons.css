@@ -36,6 +36,22 @@
 .btn.wide { width: 100%; }
 .btn.square { width: 44px; min-height: 44px; padding: 0; }
 
+/* A square button with just an icon (or ×). */
+.icon-btn {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid #dce5de;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+}
+.icon-btn:hover { background: #f3f7f4; text-decoration: none; }
+.icon-btn:disabled { opacity: 0.35; cursor: default; }
+
 /* A button that looks like a link. */
 .text-link {
   border: 0;

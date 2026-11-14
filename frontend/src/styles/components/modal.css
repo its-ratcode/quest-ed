@@ -1,0 +1,60 @@
+/* Dialogs: a dimmed backdrop and a panel. Long ones scroll between a pinned title and pinned buttons. */
+.modal-backdrop-fr {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 31, 22, 0.42);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(3px);
+}
+.modal-panel {
+  --mp: 24px;
+  width: min(100%, 490px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 23px;
+  padding: var(--mp);
+  box-shadow: 0 30px 80px #13271a2d;
+  max-height: min(93vh, 900px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.modal-panel.lg { width: min(100%, 680px); }
+.modal-header-fr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: calc(var(--mp) * -1);
+  z-index: 3;
+  background: #fff;
+  margin: calc(var(--mp) * -1) calc(var(--mp) * -1) 18px;
+  padding: var(--mp) var(--mp) 12px;
+  border-bottom: 1px solid transparent;
+}
+.modal-header-fr h2 { margin: 0; font-size: 21px; letter-spacing: -0.6px; font-weight: 800; }
+.modal-header-fr .icon-btn { background: #f1f4f1; border: none; flex: none; }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+  position: sticky;
+  bottom: calc(var(--mp) * -1);
+  z-index: 3;
+  background: #fff;
+  margin: 22px calc(var(--mp) * -1) calc(var(--mp) * -1);
+  padding: 14px var(--mp) var(--mp);
+  border-top: 1px solid var(--line);
+}
+
+/* Phones: dialogs come up from the bottom. */
+@media (max-width: 700px) {
+  .modal-backdrop-fr { padding: 12px; align-items: flex-end; }
+  .modal-panel,
+  .modal-panel.lg { --mp: 18px; border-radius: 22px 22px 14px 14px; width: 100%; max-height: 91vh; }
+}

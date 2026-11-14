@@ -1,0 +1,33 @@
+/* A page's title row, and plain lists of rows. */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: calc(var(--gap) + 6px);
+  flex-wrap: wrap;
+}
+.page-header h1 { font-size: 30px; line-height: 1.28; letter-spacing: -1.2px; font-weight: 800; margin: 3px 0 5px; }
+.page-header p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.list-plain { list-style: none; margin: 0; padding: 0; }
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--row) 0;
+  border-top: 1px solid var(--line);
+}
+.list-row:first-child { border-top: 0; padding-top: 0; }
+.list-row:last-child { padding-bottom: 0; }
+
+/* A whole row that is a link (the phone menu). */
+.menu-link { color: var(--ink); text-decoration: none; gap: 12px; }
+.menu-link:hover { color: var(--ink); text-decoration: none; background: #f6f9f7; }
+
+.fw-600 { font-weight: 700; }
+
+@media (max-width: 700px) {
+  .page-header { align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .page-header h1 { font-size: 25px; margin: 2px 0 7px; }
+}

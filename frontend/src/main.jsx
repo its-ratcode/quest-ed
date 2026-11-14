@@ -11,6 +11,10 @@ import './styles/components/alerts.css'
 import './styles/components/tabs.css'
 import './styles/components/text.css'
 import './styles/components/auth.css'
+import './styles/components/avatar.css'
+import './styles/components/modal.css'
+import './styles/components/page.css'
+import './styles/components/layout.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

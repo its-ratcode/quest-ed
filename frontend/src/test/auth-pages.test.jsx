@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -68,12 +68,15 @@ describe('signing in', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect email/username or password.')
   })
 
-  it('signs out and returns to the sign-in page', async () => {
+  it('signs out after confirming, and returns to the sign-in page', async () => {
     const user = userEvent.setup()
     authApi.me.mockResolvedValue(ME)
     authApi.logout.mockResolvedValue({})
     renderApp('/dashboard')
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    const dialog = screen.getByRole('dialog', { name: 'Sign out?' })
+    expect(authApi.logout).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Sign out' }))
     expect(authApi.logout).toHaveBeenCalled()
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
   })
