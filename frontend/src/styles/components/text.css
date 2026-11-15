@@ -3,5 +3,8 @@
 .text-2 { color: var(--muted); }
 .small-text { font-size: 13px; }
 
+/* Things stacked with a small gap. */
+.stack-sm { display: flex; flex-direction: column; gap: 6px; }
+
 .loading-text { color: var(--muted); font-size: 13px; padding: 8px 0; }
 .full-center { min-height: 100vh; display: grid; place-items: center; padding: 16px; }

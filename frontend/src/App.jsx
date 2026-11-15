@@ -1,8 +1,10 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
 import DashboardLayout from './components/layout/DashboardLayout'
+import { ToastProvider } from './components/ui/toast/ToastProvider'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
+import ProfilePage from './features/profile/ProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import MorePage from './pages/MorePage'
@@ -19,6 +21,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="more" element={<MorePage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -29,9 +32,11 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

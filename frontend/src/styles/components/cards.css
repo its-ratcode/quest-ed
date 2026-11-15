@@ -9,3 +9,10 @@
 }
 .card.pad,
 .card-soft { padding: var(--pad); }
+.card-lilac { background: var(--lilac-soft); }
+
+.card-title { font-weight: 800; letter-spacing: -0.45px; font-size: 16px; margin: 0; }
+
+@media (max-width: 700px) {
+  .card-title { font-size: 15px; }
+}

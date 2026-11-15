@@ -36,8 +36,10 @@ export default function DashboardLayout() {
         </nav>
         <div className="sidebar-spacer" />
         <div className="sidebar-footer">
-          <Avatar size="sm" emoji={isKid ? user.avatar : null} tone={isKid ? 'mint' : 'sam'}
-            initials={isKid ? null : initialsOf(user.display_name)} />
+          <Link to="/dashboard/profile" aria-label="Your profile">
+            <Avatar size="sm" emoji={isKid ? user.avatar : null} tone={isKid ? 'mint' : 'sam'}
+              initials={isKid ? null : initialsOf(user.display_name)} />
+          </Link>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="user-name text-truncate">{user.display_name}</div>
             <div className="user-role">{ROLE_LABEL[user.role]}</div>

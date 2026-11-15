@@ -1,9 +1,11 @@
 import { api, unwrap } from './client'
 
-/** Sign-up, sign-in and the current session. */
+/** Sign-up, sign-in, the current session, and your own profile. */
 export const authApi = {
   me: (signal) => unwrap(api.get('/auth/me', { signal })),
   login: (identifier, password) => unwrap(api.post('/auth/login', { identifier, password })),
   register: (payload) => unwrap(api.post('/auth/register', payload)),
   logout: () => unwrap(api.post('/auth/logout')),
+  updateMe: (payload) => unwrap(api.patch('/auth/me', payload)),
+  changePassword: (payload) => unwrap(api.post('/auth/change-password', payload)),
 }

@@ -16,9 +16,10 @@ from jwt.exceptions import PyJWTError
 from sqlalchemy import func, or_, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..core.security import roles_required
 from ..core.validation import Payload
 from ..extensions import db
-from ..models import ROLE_PARENT, Family, TokenBlocklist, User, utcnow
+from ..models import ROLE_ADMIN, ROLE_PARENT, Family, TokenBlocklist, User, utcnow
 
 ns = Namespace("auth", description="Sign-up, sign-in and sessions")
 
@@ -111,13 +112,50 @@ class Logout(Resource):
         return response
 
 
+def _me_payload(user):
+    family = user.family
+    return {
+        "user": user.to_dict(private=True),
+        "family": family.to_dict(include_invite=user.role == ROLE_PARENT) if family else None,
+    }
+
+
 @ns.route("/me")
 class Me(Resource):
     @jwt_required()
     def get(self):
         """The signed-in user and their family."""
-        family = current_user.family
-        return {
-            "user": current_user.to_dict(private=True),
-            "family": family.to_dict(include_invite=current_user.role == ROLE_PARENT) if family else None,
-        }
+        return _me_payload(current_user)
+
+    @jwt_required()
+    def patch(self):
+        """Change your own display name or avatar (any emoji, or a short text)."""
+        p = Payload()
+        if p.has("display_name"):
+            display_name = p.string("display_name", max_len=60)
+        if p.has("avatar"):
+            avatar = p.string("avatar", max_len=16)
+        p.validate()
+        if p.has("display_name"):
+            current_user.display_name = display_name
+        if p.has("avatar"):
+            current_user.avatar = avatar
+        db.session.commit()
+        return _me_payload(current_user)
+
+
+@ns.route("/change-password")
+class ChangePassword(Resource):
+    @roles_required(ROLE_PARENT, ROLE_ADMIN)
+    def post(self):
+        """Change your password. Kids' passwords are set by a parent instead."""
+        p = Payload()
+        current = p.password("current_password", min_len=1)
+        new = p.password("new_password", min_len=8)
+        p.validate()
+        if not current_user.check_password(current):
+            p.add_error("current_password", "Your current password is incorrect.")
+            p.validate()
+        current_user.set_password(new)
+        db.session.commit()
+        return {"message": "Password updated."}
