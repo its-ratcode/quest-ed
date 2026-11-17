@@ -4,6 +4,7 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import { ToastProvider } from './components/ui/toast/ToastProvider'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
+import FamilyPage from './features/family/FamilyPage'
 import ProfilePage from './features/profile/ProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
@@ -22,6 +23,7 @@ export function AppRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="more" element={<MorePage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="family" element={<FamilyPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

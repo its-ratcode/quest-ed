@@ -36,7 +36,7 @@ describe('signing in', () => {
     const user = userEvent.setup()
     authApi.me.mockRejectedValueOnce(apiError(401, { error: 'unauthorized' })).mockResolvedValue(ME)
     authApi.login.mockResolvedValue({ user: ME.user })
-    renderApp('/dashboard')
+    renderApp('/dashboard/more')
 
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
     await user.type(screen.getByLabelText('Email or username'), 'pat@example.test')
@@ -44,7 +44,8 @@ describe('signing in', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     expect(authApi.login).toHaveBeenCalledWith('pat@example.test', 'parent-pass-123')
-    expect(await screen.findByRole('heading', { name: 'Hi Pat' })).toBeInTheDocument()
+    // Back on the page that was asked for (the menu), not just the overview.
+    expect(await screen.findByRole('heading', { name: 'Menu' })).toBeInTheDocument()
   })
 
   it('checks empty fields before asking the server', async () => {

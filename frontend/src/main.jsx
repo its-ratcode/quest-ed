@@ -16,6 +16,8 @@ import './styles/components/modal.css'
 import './styles/components/page.css'
 import './styles/components/layout.css'
 import './styles/components/toast.css'
+import './styles/components/widgets.css'
+import './styles/components/states.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
