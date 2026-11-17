@@ -28,6 +28,9 @@ class ApiClient:
     def patch(self, path, json=None):
         return self.raw.patch(API + path, json=json, headers=self._headers(API + path))
 
+    def delete(self, path, json=None):
+        return self.raw.delete(API + path, json=json, headers=self._headers(API + path))
+
 
 @pytest.fixture
 def app():

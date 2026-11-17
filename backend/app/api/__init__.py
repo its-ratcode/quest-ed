@@ -38,8 +38,10 @@ def create_api_blueprint(enable_docs=True):
         return {"message": "Your session is not valid. Please sign in again.", "error": "invalid_token"}, 401
 
     from .auth import ns as auth_ns
+    from .family import ns as family_ns
     from .health import ns as health_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(family_ns, path="/family")
     return blueprint

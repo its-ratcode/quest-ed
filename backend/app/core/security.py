@@ -10,7 +10,7 @@ from flask_restx import abort
 from sqlalchemy import select
 
 from ..extensions import db, jwt
-from ..models import TokenBlocklist, User
+from ..models import ROLE_CHILD, TokenBlocklist, User
 
 
 @jwt.user_identity_loader
@@ -50,3 +50,20 @@ def roles_required(*roles):
         return wrapper
 
     return decorator
+
+
+def family_child_or_404(child_id):
+    """A kid in the signed-in person's family. Kids of other families are reported as
+    not found (not "forbidden"), so nobody can find out which accounts exist."""
+    child = db.session.get(User, child_id)
+    if (child is None or child.role != ROLE_CHILD or current_user.family_id is None
+            or child.family_id != current_user.family_id):
+        abort(404, "Child not found.")
+    return child
+
+
+def confirm_password(user, password, field="password"):
+    """Check a parent's password before something that can't be undone.
+    Wrong: 400 with a message on the field."""
+    if not password or not user.check_password(password):
+        abort(400, "Please check the highlighted fields.", errors={field: "That password isn't right."})

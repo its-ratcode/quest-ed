@@ -11,6 +11,7 @@ from flask import request
 from flask_restx import abort
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{2,29}$")
 _MISSING = object()
 
 
@@ -72,6 +73,13 @@ class Payload:
     def email(self, name, required=True):
         return self.string(name, required=required, max_len=255, lower=True,
                            pattern=EMAIL_RE, pattern_msg="Enter a valid email address.")
+
+    def username(self, name, required=True):
+        """A kid's sign-in name: 3-30 lowercase letters, numbers, dots, dashes or underscores."""
+        return self.string(
+            name, required=required, min_len=3, max_len=30, lower=True, pattern=USERNAME_RE,
+            pattern_msg="Use 3-30 lowercase letters, numbers, dots, dashes or underscores.",
+        )
 
     def add_error(self, name, message):
         self.errors[name] = message
