@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/useAuth'
 import { Field } from '../../components/ui/Field'
 import { fieldProps } from '../../components/ui/fieldProps'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
+import { deviceTimezone } from '../../utils/time'
 import { AuthBrand } from './AuthBrand'
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
@@ -11,7 +12,8 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ display_name: '', email: '', password: '', family_name: '' })
+  const [mode, setMode] = useState('create') // 'create' a new family, or 'join' one with a code
+  const [form, setForm] = useState({ display_name: '', email: '', password: '', family_name: '', invite_code: '' })
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -23,7 +25,8 @@ export default function RegisterPage() {
     if (!form.display_name.trim()) local.display_name = 'Tell us your name.'
     if (!EMAIL_RE.test(form.email.trim())) local.email = 'Enter a valid email address.'
     if (form.password.length < 8) local.password = 'Use at least 8 characters.'
-    if (!form.family_name.trim()) local.family_name = 'Give your family a name.'
+    if (mode === 'create' && !form.family_name.trim()) local.family_name = 'Give your family a name.'
+    if (mode === 'join' && !form.invite_code.trim()) local.invite_code = 'Enter the invite code.'
     return local
   }
 
@@ -42,9 +45,12 @@ export default function RegisterPage() {
         display_name: form.display_name.trim(),
         email: form.email.trim(),
         password: form.password,
-        family_name: form.family_name.trim(),
+        ...(mode === 'create'
+          ? { family_name: form.family_name.trim(), timezone: deviceTimezone() }
+          : { invite_code: form.invite_code.trim() }),
       })
-      navigate('/dashboard', { replace: true })
+      // A new family's next step is adding the kids.
+      navigate(mode === 'create' ? '/dashboard/family' : '/dashboard', { replace: true })
     } catch (error) {
       setErrors(getFieldErrors(error))
       setFormError(getErrorMessage(error, 'Sign-up failed. Please try again.'))
@@ -58,6 +64,15 @@ export default function RegisterPage() {
       <div className="auth-card card-soft">
         <h1>Create a parent account</h1>
         <p className="text-2 small-text mt-1 mb-3">You'll add your kids' accounts after this.</p>
+
+        <div className="tabs mb-3" role="tablist" aria-label="Family setup">
+          <button type="button" role="tab" className="tab" aria-selected={mode === 'create'} onClick={() => setMode('create')}>
+            Start a new family
+          </button>
+          <button type="button" role="tab" className="tab" aria-selected={mode === 'join'} onClick={() => setMode('join')}>
+            Join with a code
+          </button>
+        </div>
 
         {formError && <div className="alert-soft error mb-3" role="alert">{formError}</div>}
 
@@ -74,11 +89,20 @@ export default function RegisterPage() {
             <input {...fieldProps('password', errors.password, 'hint')} type="password"
               autoComplete="new-password" value={form.password} onChange={update('password')} />
           </Field>
-          <Field id="family_name" label="Family name" error={errors.family_name}
-            hint="Shown to everyone in your family, e.g. The Riveras">
-            <input {...fieldProps('family_name', errors.family_name, 'hint')}
-              value={form.family_name} onChange={update('family_name')} />
-          </Field>
+          {mode === 'create' ? (
+            <Field id="family_name" label="Family name" error={errors.family_name}
+              hint="Shown to everyone in your family, e.g. The Riveras">
+              <input {...fieldProps('family_name', errors.family_name, 'hint')}
+                value={form.family_name} onChange={update('family_name')} />
+            </Field>
+          ) : (
+            <Field id="invite_code" label="Invite code" error={errors.invite_code}
+              hint={'Ask the parent who created your family. It\'s on their "Family & kids" page.'}>
+              <input {...fieldProps('invite_code', errors.invite_code, 'hint')} autoCapitalize="characters"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                value={form.invite_code} onChange={update('invite_code')} />
+            </Field>
+          )}
           <button type="submit" className="btn primary wide mt-2" disabled={busy}>
             {busy ? 'Creating account…' : 'Create account'}
           </button>

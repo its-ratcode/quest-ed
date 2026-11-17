@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { FullPageSpinner } from '../components/ui/FullPageSpinner'
@@ -14,12 +15,20 @@ export function RequireAuth() {
   return <Outlet />
 }
 
-/** Signed-in people skip the sign-in and sign-up pages, and go back to the page they
- *  wanted before signing in (if any). */
+/**
+ * People who arrive on the sign-in or sign-up page already signed in skip it.
+ * Someone who signs in or up *on* the page stays put: the page itself then takes them
+ * where they're going (back to the page they wanted, or the next step after sign-up).
+ */
 export function RedirectIfAuthenticated({ children }) {
   const { status } = useAuth()
   const location = useLocation()
+  const [arrivedSignedOut, setArrivedSignedOut] = useState(false)
+  if (status === 'anonymous' && !arrivedSignedOut) setArrivedSignedOut(true)
+
   if (status === 'loading') return <FullPageSpinner />
-  if (status === 'authenticated') return <Navigate to={safeReturnPath(location.state?.from)} replace />
+  if (status === 'authenticated' && !arrivedSignedOut) {
+    return <Navigate to={safeReturnPath(location.state?.from)} replace />
+  }
   return children
 }

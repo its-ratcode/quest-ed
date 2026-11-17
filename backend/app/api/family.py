@@ -3,9 +3,10 @@ from flask_restx import Namespace, Resource, abort
 from sqlalchemy import select
 
 from ..core.security import confirm_password, family_child_or_404, roles_required
+from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
 from ..extensions import db
-from ..models import ROLE_CHILD, ROLE_PARENT, User
+from ..models import ROLE_CHILD, ROLE_PARENT, Family, User, generate_invite_code
 from ..services.erase import erase_child
 
 ns = Namespace("family", description="Your family, and your kids' accounts")
@@ -19,11 +20,50 @@ class FamilyResource(Resource):
         family = current_user.family
         if family is None:
             abort(404, "You are not part of a family yet.")
-        is_parent = current_user.role == ROLE_PARENT
-        return {
-            "family": family.to_dict(include_invite=is_parent),
-            "members": [member.to_dict(private=is_parent) for member in family.members],
-        }
+        return _family_payload(current_user)
+
+    @roles_required(ROLE_PARENT)
+    def patch(self):
+        """Rename the family or change its time zone."""
+        p = Payload()
+        family = current_user.family
+        if p.has("name"):
+            name = p.string("name", max_len=80)
+        if p.has("timezone"):
+            timezone = p.string("timezone", max_len=64)
+            if timezone and not is_valid_timezone(timezone):
+                p.add_error("timezone", "Unknown time zone.")
+        p.validate()
+        if p.has("name"):
+            family.name = name
+        if p.has("timezone"):
+            family.timezone = timezone
+        db.session.commit()
+        return _family_payload(current_user)
+
+
+def _family_payload(viewer):
+    family = viewer.family
+    is_parent = viewer.role == ROLE_PARENT
+    return {
+        "family": family.to_dict(include_invite=is_parent),
+        "members": [member.to_dict(private=is_parent) for member in family.members],
+    }
+
+
+@ns.route("/invite-code")
+class InviteCode(Resource):
+    @roles_required(ROLE_PARENT)
+    def post(self):
+        """Make a new invite code. The old one stops working."""
+        family = current_user.family
+        for _ in range(5):  # codes are random; in the rare case one is taken, try another
+            code = generate_invite_code()
+            if not db.session.scalar(select(Family.id).where(Family.invite_code == code)):
+                family.invite_code = code
+                break
+        db.session.commit()
+        return {"invite_code": family.invite_code}
 
 
 @ns.route("/children")

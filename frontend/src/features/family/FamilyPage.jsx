@@ -6,14 +6,18 @@ import PasswordConfirmModal from '../../components/ui/PasswordConfirmModal'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { useToast } from '../../components/ui/toast/useToast'
 import { useApi } from '../../hooks/useApi'
+import { getErrorMessage } from '../../utils/errors'
 import { initialsOf } from '../../utils/names'
 import ChildFormModal from './ChildFormModal'
+import { FamilyName } from './FamilyName'
+import { InviteBox } from './InviteBox'
+import { TimezoneCard } from './TimezoneCard'
 
 const CLOSED = { open: false, child: null }
 
 /** The family's people. Parents add, edit and remove kids here. */
 export default function FamilyPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const toast = useToast()
   const isParent = user.role === 'parent'
   const family = useApi((signal) => familyApi.get(signal), [])
@@ -28,12 +32,26 @@ export default function FamilyPage() {
   const parents = members.filter((m) => m.role === 'parent')
   const openAdd = () => setChildForm({ open: true, child: null })
 
+  /** Saves a family setting; shows the outcome, and throws on failure so a form can stay open. */
+  async function saveSetting(save, success) {
+    try {
+      await save()
+      toast.success(success)
+      family.reload()
+      refreshUser().catch(() => {}) // other pages show the family name too
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+      throw err
+    }
+  }
+
   return (
     <>
       <div className="page-header">
         <div>
-          <h1>{info.name}</h1>
-          <p>{isParent ? "Your kids' accounts, and who else is in the family." : 'The people in your family.'}</p>
+          <FamilyName name={info.name} editable={isParent}
+            onSave={(name) => saveSetting(() => familyApi.rename(name), 'Family name updated.')} />
+          <p>{isParent ? "Your kids' accounts, and how another parent can join." : 'The people in your family.'}</p>
         </div>
         {isParent && <button type="button" className="btn primary" onClick={openAdd}>Add a child</button>}
       </div>
@@ -79,7 +97,7 @@ export default function FamilyPage() {
           <div className="section-top">
             <div>
               <h2 id="parents-title" className="section-title">Parents</h2>
-              <p className="section-sub">Who looks after the family</p>
+              <p className="section-sub">{isParent ? 'Invite another parent with the code below' : 'Who looks after the family'}</p>
             </div>
           </div>
           <ul className="list-plain widget-body">
@@ -90,8 +108,22 @@ export default function FamilyPage() {
               </li>
             ))}
           </ul>
+          {isParent && (
+            <div className="widget-foot">
+              <InviteBox code={info.invite_code}
+                onNewCode={() => saveSetting(() => familyApi.newInviteCode(), 'New invite code ready. The old one no longer works.')} />
+            </div>
+          )}
         </section>
       </div>
+
+      {/* Family settings. More panels join this row in later steps. */}
+      {isParent && (
+        <div className="widget-grid thirds">
+          <TimezoneCard timezone={info.timezone}
+            onChange={(tz) => saveSetting(() => familyApi.setTimezone(tz), `Time zone set to ${tz}.`).catch(() => {})} />
+        </div>
+      )}
 
       <ChildFormModal
         open={childForm.open}

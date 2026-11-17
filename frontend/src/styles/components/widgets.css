@@ -42,15 +42,23 @@
 
 .one-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* The family's invite code box. */
+.invite-box { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.invite-code { font-size: 18px; letter-spacing: 0.14em; color: var(--ink); font-weight: 800; }
+.tiny-text { font-size: 11px; }
+
 @media (max-width: 1180px) {
   /* With the sidebar open there isn't room for two comfortable columns. */
   .span-8,
   .span-6,
   .span-4 { grid-column: span 12; }
-  .span-3 { grid-column: span 6; }
+  .span-3,
+  .widget-grid.thirds > .span-4 { grid-column: span 6; }
+  .widget-grid.thirds > .span-4:last-child:nth-child(odd) { grid-column: span 12; }
   .widget-body.limit { max-height: none; overflow: visible; margin-right: 0; padding-right: 0; }
 }
 @media (max-width: 700px) {
-  .span-3 { grid-column: span 12; }
+  .span-3,
+  .widget-grid.thirds > .span-4 { grid-column: span 12; }
   .section-title { font-size: 15px; }
 }

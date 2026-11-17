@@ -17,6 +17,7 @@ from sqlalchemy import func, or_, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..core.security import roles_required
+from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
 from ..extensions import db
 from ..models import ROLE_ADMIN, ROLE_PARENT, Family, TokenBlocklist, User, utcnow
@@ -40,18 +41,30 @@ def _session_response(user, status=200):
 @ns.route("/register")
 class Register(Resource):
     def post(self):
-        """Create a parent account and a new family, and sign in."""
+        """Create a parent account and sign in: with a new family, or joining one with its invite code."""
         p = Payload()
         display_name = p.string("display_name", max_len=60)
         email = p.email("email")
         password = p.password("password", min_len=8)
-        family_name = p.string("family_name", max_len=80)
+        invite_code = p.string("invite_code", required=False, max_len=16)
+        family_name = p.string("family_name", required=not invite_code, max_len=80)
         p.validate()
         if db.session.scalar(select(User.id).where(User.email == email)):
             p.add_error("email", "An account with this email already exists.")
-            p.validate()
 
-        family = Family(name=family_name)
+        family = None
+        if invite_code:
+            family = db.session.scalar(select(Family).where(Family.invite_code == invite_code.upper()))
+            if family is None:
+                p.add_error("invite_code", "This invite code is not valid.")
+        p.validate()
+
+        if family is None:
+            # Sent by the browser on its own; an unknown value falls back to UTC rather than
+            # blocking sign-up over a field the parent never saw.
+            tz = p.data.get("timezone")
+            family = Family(name=family_name, timezone=tz if is_valid_timezone(tz) else "UTC")
+
         # The role is always set here; a role sent by the browser is ignored.
         user = User(role=ROLE_PARENT, email=email, display_name=display_name, family=family,
                     last_login_at=utcnow())

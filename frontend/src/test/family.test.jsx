@@ -10,12 +10,15 @@ import { ToastProvider } from '../components/ui/toast/ToastProvider'
 
 vi.mock('../api/auth', () => ({ authApi: { me: vi.fn(), logout: vi.fn() } }))
 vi.mock('../api/family', () => ({
-  familyApi: { get: vi.fn(), createChild: vi.fn(), updateChild: vi.fn(), removeChild: vi.fn() },
+  familyApi: {
+    get: vi.fn(), createChild: vi.fn(), updateChild: vi.fn(), removeChild: vi.fn(),
+    rename: vi.fn(), setTimezone: vi.fn(), newInviteCode: vi.fn(),
+  },
 }))
 
 const PAT = { id: 1, role: 'parent', display_name: 'Pat Rivera', avatar: '🙂' }
 const MIA = { id: 2, role: 'child', display_name: 'Mia', username: 'mia', avatar: '🦄' }
-const FAMILY = { id: 1, name: 'The Riveras', invite_code: 'ABCD2345' }
+const FAMILY = { id: 1, name: 'The Riveras', invite_code: 'ABCD2345', timezone: 'Mars/Olympus' }
 
 function openFamily(members = [PAT, MIA]) {
   authApi.me.mockResolvedValue({ user: PAT, family: FAMILY })
@@ -80,6 +83,41 @@ describe('family page', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save changes' }))
     expect(familyApi.updateChild).toHaveBeenCalledWith(2, { display_name: 'Mia R.', avatar: '🦄' })
     expect(await screen.findByText('Mia R. is updated.')).toBeInTheDocument()
+  })
+
+  it('renames the family in place', async () => {
+    const user = userEvent.setup()
+    openFamily()
+    await user.click(await screen.findByRole('button', { name: 'Rename the family' }))
+    const name = screen.getByLabelText('Family name')
+    await user.clear(name)
+    await user.type(name, 'The Rivera-Kims')
+    familyApi.rename.mockResolvedValue({})
+    familyApi.get.mockResolvedValue({ family: { ...FAMILY, name: 'The Rivera-Kims' }, members: [PAT, MIA] })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(familyApi.rename).toHaveBeenCalledWith('The Rivera-Kims')
+    expect(await screen.findByRole('heading', { level: 1, name: 'The Rivera-Kims' })).toBeInTheDocument()
+  })
+
+  it('shows the invite code and makes a new one after confirming', async () => {
+    const user = userEvent.setup()
+    openFamily()
+    expect(await screen.findByText('ABCD2345')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Get a new code' }))
+    const dialog = screen.getByRole('dialog', { name: 'Get a new invite code?' })
+    familyApi.newInviteCode.mockResolvedValue({ invite_code: 'WXYZ6789' })
+    familyApi.get.mockResolvedValue({ family: { ...FAMILY, invite_code: 'WXYZ6789' }, members: [PAT, MIA] })
+    await user.click(within(dialog).getByRole('button', { name: 'New code' }))
+    expect(await screen.findByText('WXYZ6789')).toBeInTheDocument()
+  })
+
+  it("offers to switch to this device's time zone when they differ", async () => {
+    const user = userEvent.setup()
+    openFamily()
+    expect(await screen.findByText(/midnight, Mars\/Olympus time/)).toBeInTheDocument()
+    familyApi.setTimezone.mockResolvedValue({})
+    await user.click(screen.getByRole('button', { name: /^Switch to / }))
+    expect(familyApi.setTimezone).toHaveBeenCalledWith(Intl.DateTimeFormat().resolvedOptions().timeZone)
   })
 
   it('removes a kid only with the right password', async () => {
