@@ -1,0 +1,45 @@
+/* A category's tile (its picture on its colour), and choosing pictures and colours. */
+.task-icon {
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: var(--butter-soft);
+  flex: none;
+  color: #5a563f;
+}
+.task-icon.lilac { background: var(--lilac-soft); color: #664a86; }
+.task-icon.sky { background: var(--sky-soft); color: #34637a; }
+.task-icon.mint { background: var(--mint-soft); color: #205e48; }
+.task-icon.sm { width: 30px; height: 30px; border-radius: 9px; }
+
+.icon-choice,
+.tone-choice { display: flex; gap: 8px; flex-wrap: wrap; }
+.icon-choice button,
+.tone-choice button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #dbe6dd;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  color: #39483e;
+}
+.icon-choice button[aria-checked='true'] { border: 2px solid #2e7756; background: var(--mint-soft); }
+.tone-choice button[aria-checked='true'] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2e7756; }
+.tone-choice .swatch-mint { background: var(--mint); border-color: #9fe3c4; }
+.tone-choice .swatch-lilac { background: var(--lilac); border-color: #cdb5ef; }
+.tone-choice .swatch-sky { background: var(--sky); border-color: #a9d2ef; }
+.tone-choice .swatch-butter { background: var(--butter); border-color: #ead27a; }
+
+/* The categories list: hidden ones are faded. */
+.cat-row .cat-actions { display: flex; gap: 6px; flex: none; }
+.cat-row.is-hidden .task-icon,
+.cat-row.is-hidden .fw-600 { opacity: 0.55; }
+
+@media (max-width: 700px) {
+  .cat-row { flex-wrap: wrap; }
+  .cat-row .cat-actions { width: 100%; justify-content: flex-end; }
+}

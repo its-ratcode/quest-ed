@@ -3,10 +3,12 @@
 const ALL_ITEMS = {
   parent: [
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
+    { to: '/dashboard/tasks', label: 'Tasks & routines', short: 'Tasks', icon: 'tasks' },
     { to: '/dashboard/family', label: 'Family & kids', short: 'Family', icon: 'family' },
   ],
   child: [
     { to: '/dashboard', label: 'Today', icon: 'home', end: true },
+    { to: '/dashboard/tasks', label: 'My tasks', short: 'Tasks', icon: 'tasks' },
   ],
   admin: [
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
@@ -24,8 +26,8 @@ export function navItemsFor(user) {
 
 // Phones: a bottom bar with up to four pages, then "More" for everything else.
 const MOBILE_PRIMARY = {
-  parent: ['/dashboard', '/dashboard/family'],
-  child: ['/dashboard'],
+  parent: ['/dashboard', '/dashboard/tasks', '/dashboard/family'],
+  child: ['/dashboard', '/dashboard/tasks'],
   admin: ['/dashboard'],
 }
 

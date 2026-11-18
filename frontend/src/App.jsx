@@ -6,6 +6,7 @@ import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import FamilyPage from './features/family/FamilyPage'
 import ProfilePage from './features/profile/ProfilePage'
+import TasksPage from './features/tasks/TasksPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import MorePage from './pages/MorePage'
@@ -24,6 +25,7 @@ export function AppRoutes() {
           <Route path="more" element={<MorePage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="family" element={<FamilyPage />} />
+          <Route path="tasks" element={<TasksPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

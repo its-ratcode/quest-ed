@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { CategoriesProvider } from '../../features/categories/CategoriesProvider'
 import { initialsOf } from '../../utils/names'
 import { Avatar } from '../ui/Avatar'
 import Icon from '../ui/Icon'
@@ -59,7 +60,9 @@ export default function DashboardLayout() {
 
         <main id="main" className="main-inner" tabIndex={-1}>
           {/* Keyed by account, so nothing loaded for one account is shown to the next. */}
-          <Outlet key={user.id} />
+          <CategoriesProvider key={user.id} enabled={user.role !== 'admin'}>
+            <Outlet />
+          </CategoriesProvider>
         </main>
       </div>
 
