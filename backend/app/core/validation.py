@@ -74,6 +74,28 @@ class Payload:
         return self.string(name, required=required, max_len=255, lower=True,
                            pattern=EMAIL_RE, pattern_msg="Enter a valid email address.")
 
+    def choice(self, name, choices, required=True, default=None):
+        """One of a fixed list of values."""
+        value = self._get(name, required)
+        if value is _MISSING:
+            return default
+        if value not in choices:
+            self.errors[name] = f"Must be one of: {', '.join(choices)}."
+            return default
+        return value
+
+    def boolean(self, name, required=False, default=None):
+        """true or false (as JSON, not text)."""
+        value = self.data.get(name, _MISSING)
+        if value is _MISSING or value is None:
+            if required:
+                self.errors[name] = "This field is required."
+            return default
+        if not isinstance(value, bool):
+            self.errors[name] = "Must be true or false."
+            return default
+        return value
+
     def username(self, name, required=True):
         """A kid's sign-in name: 3-30 lowercase letters, numbers, dots, dashes or underscores."""
         return self.string(
