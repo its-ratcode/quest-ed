@@ -6,6 +6,7 @@
     p.validate()   # 400 with {"errors": {"email": "...", ...}} if anything was wrong
 """
 import re
+from datetime import date
 
 from flask import request
 from flask_restx import abort
@@ -56,6 +57,40 @@ class Payload:
         elif pattern is not None and not pattern.match(value):
             self.errors[name] = pattern_msg
         return value
+
+    def text(self, name, max_len=1000):
+        """Optional free text; missing means an empty string."""
+        return self.string(name, required=False, max_len=max_len, default="") or ""
+
+    def integer(self, name, required=True, min_value=None, max_value=None, default=None):
+        """A whole number (also accepted as text, e.g. "10")."""
+        value = self._get(name, required)
+        if value is _MISSING:
+            return default
+        if isinstance(value, bool) or not isinstance(value, (int, str)):
+            self.errors[name] = "Must be a whole number."
+            return default
+        try:
+            value = int(value)
+        except ValueError:
+            self.errors[name] = "Must be a whole number."
+            return default
+        if min_value is not None and value < min_value:
+            self.errors[name] = f"Must be at least {min_value}."
+        elif max_value is not None and value > max_value:
+            self.errors[name] = f"Must be at most {max_value}."
+        return value
+
+    def date(self, name, required=False):
+        """A date as YYYY-MM-DD."""
+        value = self._get(name, required)
+        if value is _MISSING:
+            return None
+        try:
+            return date.fromisoformat(value)
+        except (TypeError, ValueError):
+            self.errors[name] = "Use the format YYYY-MM-DD."
+            return None
 
     def password(self, name, min_len=8, required=True):
         """A password, exactly as typed (never trimmed)."""
@@ -109,3 +144,19 @@ class Payload:
     def validate(self):
         if self.errors:
             abort(400, "Please check the highlighted fields.", errors=self.errors)
+
+
+def query_int(name, default=None, min_value=None, max_value=None):
+    """A whole number from the address (?page=2), kept within the given limits."""
+    raw = request.args.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        abort(400, f"Query parameter '{name}' must be a whole number.")
+    if min_value is not None:
+        value = max(value, min_value)
+    if max_value is not None:
+        value = min(value, max_value)
+    return value

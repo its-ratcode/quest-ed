@@ -4,7 +4,7 @@ import secrets
 from sqlalchemy import func, select
 
 from ..extensions import db
-from ..models import Category
+from ..models import Category, Task
 
 # key, label, picture, colour: what a new family starts with. Parents can change all of it.
 STARTER_CATEGORIES = (
@@ -43,10 +43,31 @@ def family_categories(family_id, active_only=False):
     return db.session.scalars(stmt.order_by(Category.position, Category.id)).all()
 
 
+def active_keys(family_id):
+    return tuple(c.key for c in family_categories(family_id, active_only=True))
+
+
+def pick(p, family_id, current=None, required=True):
+    """Read "category" from a Payload: one of the family's categories in use, or the one the
+    item already has (so editing a task in a hidden category still works). Without a value,
+    it's the family's first category."""
+    ensure_categories(family_id)
+    keys = active_keys(family_id)
+    allowed = keys + ((current,) if current and current not in keys else ())
+    default = keys[0] if keys else "other"
+    value = p.string("category", required=required, max_len=30, default=default)
+    if value is not None and value not in allowed:
+        p.add_error("category", "Pick one of your categories.")
+        return default
+    return value
+
+
 def usage(family_id):
-    """key -> how many things use that category. Tasks, routines and badges add their
-    counts here in the steps that build them; until then nothing uses a category."""
-    return {}
+    """key -> how many tasks use that category. (Routines and badges add their counts later.)"""
+    rows = db.session.execute(
+        select(Task.category, func.count(Task.id)).where(Task.family_id == family_id).group_by(Task.category)
+    )
+    return {key: count for key, count in rows if key}
 
 
 def new_key():

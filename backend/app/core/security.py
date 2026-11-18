@@ -52,6 +52,29 @@ def roles_required(*roles):
     return decorator
 
 
+def family_object_or_404(model, obj_id, label):
+    """Something (a task, a reward…) that belongs to the signed-in person's family.
+    Other families' things are reported as not found, so their existence isn't revealed."""
+    obj = db.session.get(model, obj_id)
+    if obj is None or current_user.family_id is None or obj.family_id != current_user.family_id:
+        abort(404, f"{label} not found.")
+    return obj
+
+
+def children_for_new_item(p):
+    """Who a new task is for: "assigned_to_ids": [ids] (one copy each) or "assigned_to_id": id.
+    Call before p.validate(); returns the kids, or [] after adding a field error."""
+    ids = p.data.get("assigned_to_ids")
+    if ids is None:
+        single = p.integer("assigned_to_id")
+        return [family_child_or_404(single)] if single is not None else []
+    if (not isinstance(ids, list) or not ids or len(ids) > 30
+            or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids)):
+        p.add_error("assigned_to_ids", "Choose at least one child.")
+        return []
+    return [family_child_or_404(i) for i in dict.fromkeys(ids)]  # each kid once, in order
+
+
 def family_child_or_404(child_id):
     """A kid in the signed-in person's family. Kids of other families are reported as
     not found (not "forbidden"), so nobody can find out which accounts exist."""

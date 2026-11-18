@@ -9,6 +9,13 @@ ROLE_CHILD = "child"
 ROLES = (ROLE_ADMIN, ROLE_PARENT, ROLE_CHILD)
 
 
+def user_brief(user):
+    """The short form of a person, shown next to things they did or own."""
+    if user is None:
+        return None
+    return {"id": user.id, "display_name": user.display_name, "avatar": user.avatar}
+
+
 class User(db.Model):
     """Anyone who signs in. Parents and admins use an email; kids use a username."""
 
