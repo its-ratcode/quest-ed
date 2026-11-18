@@ -1,18 +1,18 @@
+import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
-import { EmptyState } from '../../components/ui/States'
 import CategoriesPanel from '../categories/CategoriesPanel'
+import { useKids } from '../family/useKids'
+import TaskList from './TaskList'
 
-/** Tasks, and for parents the categories that group them. The task list arrives in the next steps. */
+/** Tasks, and for parents the categories that group them. */
 export default function TasksPage() {
   const { user } = useAuth()
   const isParent = user.role === 'parent'
   const [params, setParams] = useSearchParams()
   const view = isParent && params.get('view') === 'categories' ? 'categories' : 'tasks'
-
-  function show(next) {
-    setParams(next === 'tasks' ? {} : { view: next }, { replace: true })
-  }
+  const { kids } = useKids(isParent)
+  const [form, setForm] = useState({ open: false, task: null })
 
   return (
     <>
@@ -25,28 +25,29 @@ export default function TasksPage() {
               : isParent ? "Everything you've asked your kids to do." : 'What a parent has asked you to do.'}
           </p>
         </div>
+        {isParent && view === 'tasks' && kids.length > 0 && (
+          <button type="button" className="btn primary" onClick={() => setForm({ open: true, task: null })}>
+            + New task
+          </button>
+        )}
       </div>
 
       {isParent && (
         <div className="tabs mb-3" role="tablist" aria-label="Tasks or categories">
-          <button type="button" role="tab" className="tab" aria-selected={view === 'tasks'} onClick={() => show('tasks')}>
+          <button type="button" role="tab" className="tab" aria-selected={view === 'tasks'}
+            onClick={() => setParams({}, { replace: true })}>
             Tasks
           </button>
           <button type="button" role="tab" className="tab" aria-selected={view === 'categories'}
-            onClick={() => show('categories')}>
+            onClick={() => setParams({ view: 'categories' }, { replace: true })}>
             Categories
           </button>
         </div>
       )}
 
-      {view === 'categories' ? (
-        <CategoriesPanel />
-      ) : (
-        <div className="card-soft">
-          <EmptyState title="No tasks yet"
-            message={isParent ? 'Tasks you give your kids will show up here.' : 'Tasks from your parents will show up here.'} />
-        </div>
-      )}
+      {view === 'categories'
+        ? <CategoriesPanel />
+        : <TaskList isParent={isParent} kids={kids} form={form} setForm={setForm} />}
     </>
   )
 }

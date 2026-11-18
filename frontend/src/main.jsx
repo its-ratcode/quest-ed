@@ -19,6 +19,7 @@ import './styles/components/toast.css'
 import './styles/components/widgets.css'
 import './styles/components/states.css'
 import './styles/components/categories.css'
+import './styles/components/tasks.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
