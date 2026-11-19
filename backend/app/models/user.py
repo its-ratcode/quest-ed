@@ -29,6 +29,9 @@ class User(db.Model):
     avatar = db.Column(db.String(16), nullable=False, default="🙂")
     password_hash = db.Column(db.String(255), nullable=False)
     family_id = db.Column(db.Integer, db.ForeignKey("families.id"), nullable=True, index=True)
+    # A kid's points to spend. Only services/points.py changes it, together with a history
+    # entry; its conditional update makes sure it never goes below zero.
+    points_balance = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
     last_login_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -41,8 +44,9 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def to_dict(self, private=False):
-        """Public fields; `private` adds the email (only for the user themself)."""
+    def to_dict(self, private=False, include_balance=True):
+        """Public fields; `private` adds the email (only for the user themself).
+        A kid's points balance is included unless `include_balance` is off (siblings don't see each other's)."""
         data = {
             "id": self.id,
             "role": self.role,
@@ -53,6 +57,8 @@ class User(db.Model):
             "is_active": self.is_active,
             "created_at": iso(self.created_at),
         }
+        if self.role == ROLE_CHILD and include_balance:
+            data["points_balance"] = self.points_balance
         if private:
             data["email"] = self.email
         return data

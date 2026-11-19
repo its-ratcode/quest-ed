@@ -29,8 +29,11 @@ class Task(db.Model):
 
     assigned_to = db.relationship("User", foreign_keys=[assigned_to_id])
     created_by = db.relationship("User", foreign_keys=[created_by_id])
+    submissions = db.relationship("TaskSubmission", back_populates="task", order_by="TaskSubmission.id.desc()",
+                                  cascade="all, delete-orphan")
 
     def to_dict(self):
+        latest = self.submissions[0] if self.submissions else None
         return {
             "id": self.id,
             "title": self.title,
@@ -43,4 +46,6 @@ class Task(db.Model):
             "created_by": user_brief(self.created_by),
             "created_at": iso(self.created_at),
             "updated_at": iso(self.updated_at),
+            # The last "I did it" and the parent's answer (e.g. why it was sent back).
+            "latest_submission": latest.to_dict(include_task=False) if latest else None,
         }

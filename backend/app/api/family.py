@@ -47,7 +47,9 @@ def _family_payload(viewer):
     is_parent = viewer.role == ROLE_PARENT
     return {
         "family": family.to_dict(include_invite=is_parent),
-        "members": [member.to_dict(private=is_parent) for member in family.members],
+        # Kids see their own points, not their brothers' and sisters'.
+        "members": [member.to_dict(private=is_parent, include_balance=is_parent or member.id == viewer.id)
+                    for member in family.members],
     }
 
 

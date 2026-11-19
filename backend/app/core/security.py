@@ -7,7 +7,7 @@ from functools import wraps
 
 from flask_jwt_extended import current_user, verify_jwt_in_request
 from flask_restx import abort
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from ..extensions import db, jwt
 from ..models import ROLE_CHILD, TokenBlocklist, User
@@ -83,6 +83,16 @@ def family_child_or_404(child_id):
             or child.family_id != current_user.family_id):
         abort(404, "Child not found.")
     return child
+
+
+def transition(model, obj_id, from_status, **values):
+    """Move a row from one status to the next in a single step. Returns False when it was no
+    longer in `from_status`, for example because a second click or another parent got there
+    first, so nothing happens twice."""
+    result = db.session.execute(
+        update(model).where(model.id == obj_id, model.status == from_status).values(**values)
+    )
+    return result.rowcount == 1
 
 
 def confirm_password(user, password, field="password"):
