@@ -21,7 +21,8 @@
 .pill-late { background: #f3eaff; color: #694a91; }
 .pill-muted { background: #eef0ee; color: #5f6961; }
 .pill-sky { background: #e8f3ff; color: #295e88; }
-.points-pill { font-size: 12px; font-weight: 850; color: #3a604b; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.points-pill,
+.points-bubble { font-size: 12px; font-weight: 850; color: #3a604b; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* The list: one card per task. */
 .task-list {
@@ -52,6 +53,20 @@
 .task-meta .pill { padding: 3px 9px; }
 .task-meta .avatar { width: 22px; height: 22px; font-size: 12px; border: 0; }
 .task-meta .sep::before { content: '·'; margin-right: 4px; color: var(--muted-2); }
+
+/* A parent's note on a task: lilac after sending back, mint after approving. */
+.review-note { margin-top: 9px; font-size: 11px; padding: 9px 11px; border-radius: 9px; background: #f3eaff; color: #694a91; }
+.review-note.ok { background: #e0faed; color: #1c6948; }
+
+/* Rows in a panel (the "Ready for your approval" list). */
+.task-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding: 16px 0; min-width: 0; }
+.task-row:first-child { border-top: 0; padding-top: 0; }
+.task-row:last-child { padding-bottom: 0; }
+.task-text { min-width: 0; flex: 1; }
+.task-row .task-text { flex: 1 1 220px; }
+.task-row .task-actions { margin-left: auto; }
+.task-detail { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.task-note { font-size: 11px; color: #4d6555; background: #f5f8f5; padding: 9px 11px; border-radius: 9px; margin-top: 9px; display: inline-block; }
 
 /* Filters above a list. */
 .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--gap); }
@@ -171,6 +186,9 @@
   .task-card { flex-wrap: wrap; }
   .task-card .task-body { flex-basis: calc(100% - 57px); }
   .task-card .task-side { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; padding-left: 57px; }
+  .task-row { gap: 10px; }
+  .task-row .task-actions { width: 100%; padding-left: 55px; }
+  .task-row .task-actions .btn { flex: 1; }
   .filter-bar .search-box { max-width: none; flex-basis: 100%; }
   .cat-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

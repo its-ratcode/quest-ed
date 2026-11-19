@@ -2,7 +2,8 @@
 // Menus only hide what a role can't use; the API enforces the same rules.
 const ALL_ITEMS = {
   parent: [
-    { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
+    // badge: shows how many "I did it"s are waiting.
+    { to: '/dashboard', label: 'Overview', icon: 'home', end: true, badge: 'approvals' },
     { to: '/dashboard/tasks', label: 'Tasks & routines', short: 'Tasks', icon: 'tasks' },
     { to: '/dashboard/family', label: 'Family & kids', short: 'Family', icon: 'family' },
   ],

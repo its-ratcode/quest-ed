@@ -5,12 +5,17 @@ import { dueInfo } from '../../utils/format'
 import { useCategories } from '../categories/useCategories'
 import { TASK_STATUS } from './taskStatus'
 
-/** One task in a `.task-list`: its category tile, title, status, due date, kid, points and actions. */
-export default function TaskCard({ task, viewerRole, onEdit, onArchive }) {
+/**
+ * One task in a `.task-list`: its category tile, title, status, due date, kid, points and
+ * actions. Kids press "I did it"; a parent's note shows after sending back or approving.
+ */
+export default function TaskCard({ task, viewerRole, onSubmit, onEdit, onArchive }) {
   const category = useCategories().of(task.category)
   const due = task.status === 'open' || task.status === 'submitted' ? dueInfo(task.due_date) : null
   const isParent = viewerRole === 'parent'
   const editable = task.status === 'open' || task.status === 'submitted'
+  const latest = task.latest_submission
+  const sentBack = task.status === 'open' && latest?.status === 'rejected'
 
   return (
     <article className={`task-card${task.status === 'approved' ? ' is-done' : ''}`} aria-label={task.title}>
@@ -29,6 +34,11 @@ export default function TaskCard({ task, viewerRole, onEdit, onArchive }) {
             </span>
           )}
         </div>
+
+        {sentBack && latest.review_note && <div className="review-note">Sent back: {latest.review_note}</div>}
+        {task.status === 'approved' && latest?.review_note && (
+          <div className="review-note ok">{latest.reviewed_by?.display_name || 'Parent'}: {latest.review_note}</div>
+        )}
       </div>
 
       <div className="task-side">
@@ -44,6 +54,15 @@ export default function TaskCard({ task, viewerRole, onEdit, onArchive }) {
                 aria-label={`Archive ${task.title}`}>Archive</button>
             )}
           </div>
+        )}
+        {!isParent && task.status === 'open' && (
+          <div className="task-actions">
+            <button type="button" className="btn primary small" onClick={() => onSubmit(task)}
+              aria-label={`I did it: ${task.title}`}>I did it</button>
+          </div>
+        )}
+        {!isParent && task.status === 'submitted' && (
+          <span className="small-text text-2">Sent. A parent will check it.</span>
         )}
       </div>
     </article>

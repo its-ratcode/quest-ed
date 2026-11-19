@@ -7,6 +7,7 @@ import SearchBox from '../../components/ui/SearchBox'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { useToast } from '../../components/ui/toast/useToast'
 import { useApi } from '../../hooks/useApi'
+import SubmitTaskModal from './SubmitTaskModal'
 import TaskCard from './TaskCard'
 import TaskFormModal from './TaskFormModal'
 
@@ -28,6 +29,7 @@ export default function TaskList({ isParent, kids, form, setForm }) {
   const query = params.get('q') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
   const [archiving, setArchiving] = useState(null)
+  const [submitting, setSubmitting] = useState(null)
 
   const tasks = useApi((signal) => tasksApi.list({
     status, page, per_page: PER_PAGE, ...(childId ? { child_id: childId } : {}), ...(query ? { q: query } : {}),
@@ -97,7 +99,7 @@ export default function TaskList({ isParent, kids, form, setForm }) {
           <div className="task-list">
             {items.map((task) => (
               <TaskCard key={task.id} task={task} viewerRole={isParent ? 'parent' : 'child'}
-                onEdit={(t) => setForm({ open: true, task: t })} onArchive={setArchiving} />
+                onSubmit={setSubmitting} onEdit={(t) => setForm({ open: true, task: t })} onArchive={setArchiving} />
             ))}
           </div>
           <Pager page={page} perPage={PER_PAGE} total={tasks.data?.total ?? items.length} label="Task pages"
@@ -113,6 +115,12 @@ export default function TaskList({ isParent, kids, form, setForm }) {
             tasks.reload()
           }} />
       )}
+
+      <SubmitTaskModal task={submitting} onClose={() => setSubmitting(null)}
+        onSubmitted={() => {
+          toast.success('Sent to your parent.')
+          tasks.reload()
+        }} />
 
       <ConfirmDialog
         open={Boolean(archiving)}

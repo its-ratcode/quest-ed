@@ -24,6 +24,20 @@ export function formatDate(value, options = { weekday: 'short', month: 'short', 
   return parseDateOnly(value).toLocaleDateString(undefined, options)
 }
 
+/** How long ago something happened: "just now", "5 min ago", "3h ago", "2d ago", then the date. */
+export function relativeTime(value, now = new Date()) {
+  if (!value) return ''
+  const seconds = Math.round((now - new Date(value)) / 1000)
+  if (seconds < 45) return 'just now'
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return `${minutes} min ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.round(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 /** How a due date reads today: { label: 'Due tomorrow', tone: 'soon' | 'later' | 'late' }. */
 export function dueInfo(dueDate, today = new Date()) {
   if (!dueDate) return null
