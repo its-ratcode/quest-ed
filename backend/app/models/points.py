@@ -4,6 +4,8 @@ from .user import user_brief
 
 TX_TASK_REWARD = "task_reward"  # a task was approved
 TX_ADJUSTMENT = "adjustment"    # a parent added or took away points by hand
+TX_REDEMPTION = "redemption"    # spent in the reward shop
+TX_REFUND = "refund"            # a reward was cancelled, so the points came back
 
 
 class PointTransaction(db.Model):
@@ -20,6 +22,7 @@ class PointTransaction(db.Model):
     kind = db.Column(db.String(20), nullable=False)
     description = db.Column(db.String(200), nullable=False)
     submission_id = db.Column(db.Integer, db.ForeignKey("task_submissions.id"), nullable=True)
+    redemption_id = db.Column(db.Integer, db.ForeignKey("redemptions.id"), nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)
 
@@ -35,6 +38,7 @@ class PointTransaction(db.Model):
             "kind": self.kind,
             "description": self.description,
             "submission_id": self.submission_id,
+            "redemption_id": self.redemption_id,
             "created_by": user_brief(self.created_by),
             "created_at": iso(self.created_at),
         }

@@ -6,7 +6,7 @@ photos…) adds it here, so removing a kid always removes everything about them.
 from sqlalchemy import delete, select
 
 from ..extensions import db
-from ..models import PointTransaction, Task, TaskSubmission
+from ..models import PointTransaction, Redemption, Task, TaskSubmission
 
 
 def erase_child(child):
@@ -16,6 +16,7 @@ def erase_child(child):
     photo_names = [name for name in db.session.scalars(
         select(TaskSubmission.photo).where(TaskSubmission.task_id.in_(task_ids))) if name]
     db.session.execute(delete(PointTransaction).where(PointTransaction.child_id == child.id))
+    db.session.execute(delete(Redemption).where(Redemption.child_id == child.id))
     db.session.execute(delete(TaskSubmission).where(TaskSubmission.task_id.in_(task_ids)))
     db.session.execute(delete(Task).where(Task.assigned_to_id == child.id))
     db.session.delete(child)
