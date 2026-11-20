@@ -17,6 +17,7 @@ vi.mock('../api/tasks', () => ({
   tasksApi: {
     list: vi.fn(), create: vi.fn(), update: vi.fn(), archive: vi.fn(),
     submit: vi.fn(), submissions: vi.fn(), approve: vi.fn(), reject: vi.fn(),
+    photoUrl: (id) => `/api/v1/tasks/submissions/${id}/photo`,
   },
 }))
 
@@ -146,7 +147,7 @@ describe('I did it, and the parent checking it', () => {
     tasksApi.submit.mockResolvedValue({ task: task(1, 'Make your bed', { status: 'submitted' }) })
     await user.click(within(dialog).getByRole('button', { name: 'Send' }))
 
-    expect(tasksApi.submit).toHaveBeenCalledWith(1, 'All tidy')
+    expect(tasksApi.submit).toHaveBeenCalledWith(1, 'All tidy', undefined)
     expect(await screen.findByText('Sent to your parent.')).toBeInTheDocument()
     expect(tasksApi.list).toHaveBeenCalledTimes(2) // the list loads again
   })
@@ -210,5 +211,71 @@ describe('I did it, and the parent checking it', () => {
     tasksApi.approve.mockRejectedValue({ response: { status: 409, data: { message: 'This has already been checked.' } } })
     await user.click(within(dialog).getByRole('button', { name: 'Approve (+10 pts)' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('This has already been checked.')
+  })
+})
+
+describe('a photo with "I did it"', () => {
+  // The test browser can't make picture previews, so stand in for it.
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:preview')
+    URL.revokeObjectURL = vi.fn()
+  })
+
+  async function openSend(options) {
+    const user = userEvent.setup(options)
+    openTasks('/dashboard/tasks', { ...MIA, points_balance: 0 })
+    await user.click(await screen.findByRole('button', { name: 'I did it: Make your bed' }))
+    return { user, dialog: screen.getByRole('dialog', { name: 'Done with “Make your bed”?' }) }
+  }
+
+  it('a kid adds a photo, sees it, and sends it', async () => {
+    const { user, dialog } = await openSend()
+    const photo = new File(['photo'], 'room.jpg', { type: 'image/jpeg' })
+    await user.upload(within(dialog).getByLabelText('Add a photo'), photo)
+    expect(within(dialog).getByAltText('The photo you picked')).toHaveAttribute('src', 'blob:preview')
+
+    tasksApi.submit.mockResolvedValue({ task: task(1, 'Make your bed', { status: 'submitted' }) })
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }))
+    expect(tasksApi.submit).toHaveBeenCalledWith(1, '', photo)
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview') // the preview is freed
+  })
+
+  it('only takes photos up to 5 MB, and can be removed again', async () => {
+    const { user, dialog } = await openSend({ applyAccept: false })
+    await user.upload(within(dialog).getByLabelText('Add a photo'), new File(['<svg/>'], 'x.svg', { type: 'image/svg+xml' }))
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Use a JPEG or PNG photo.')
+
+    const huge = new File(['x'], 'big.png', { type: 'image/png' })
+    Object.defineProperty(huge, 'size', { value: 6 * 1024 * 1024 })
+    await user.upload(within(dialog).getByLabelText('Add a photo'), huge)
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('That photo is too big. Use one under 5 MB.')
+
+    await user.upload(within(dialog).getByLabelText('Add a photo'), new File(['p'], 'ok.png', { type: 'image/png' }))
+    expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    expect(within(dialog).queryByAltText('The photo you picked')).not.toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Add a photo')).toBeInTheDocument()
+  })
+
+  it('shows the message from the server when the photo is refused', async () => {
+    const { user, dialog } = await openSend()
+    await user.upload(within(dialog).getByLabelText('Add a photo'), new File(['p'], 'room.jpg', { type: 'image/jpeg' }))
+    tasksApi.submit.mockRejectedValue({
+      response: { status: 400, data: { message: 'The photo file is damaged.', errors: { photo: 'The photo file is damaged.' } } },
+    })
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }))
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The photo file is damaged.')
+  })
+
+  it('a parent sees the photo on the Overview and when checking', async () => {
+    const user = userEvent.setup()
+    openTasks('/dashboard', PAT, [], [waiting(5, 'Make your bed', { has_photo: true })])
+    const photo = await screen.findByAltText('Photo Mia added as proof')
+    expect(photo).toHaveAttribute('src', '/api/v1/tasks/submissions/5/photo')
+    expect(screen.getByRole('link', { name: 'Open the photo Mia added, full size' })).toHaveAttribute('target', '_blank')
+
+    await user.click(screen.getByRole('button', { name: 'Approve Make your bed from Mia' }))
+    const dialog = screen.getByRole('dialog', { name: 'Approve this task?' })
+    expect(within(dialog).getByAltText('Photo Mia added as proof')).toBeInTheDocument()
   })
 })

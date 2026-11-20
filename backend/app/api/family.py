@@ -7,6 +7,7 @@ from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
 from ..extensions import db
 from ..models import ROLE_CHILD, ROLE_PARENT, Family, User, generate_invite_code
+from ..services import photos
 from ..services.erase import erase_child
 
 ns = Namespace("family", description="Your family, and your kids' accounts")
@@ -124,6 +125,7 @@ class ChildResource(Resource):
         p.validate()
         confirm_password(current_user, password)
 
-        erase_child(child)
+        photo_names = erase_child(child)
         db.session.commit()
+        photos.delete_files(photo_names)  # only once the database change has really happened
         return {"message": "Removed."}

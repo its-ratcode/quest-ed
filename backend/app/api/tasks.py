@@ -1,4 +1,4 @@
-from flask import request
+from flask import Response, request
 from flask_jwt_extended import current_user
 from flask_restx import Namespace, Resource, abort
 from sqlalchemy import func, select
@@ -14,7 +14,7 @@ from ..models import (
     TASK_APPROVED, TASK_ARCHIVED, TASK_OPEN, TASK_STATUSES, TASK_SUBMITTED, TX_TASK_REWARD, Task, TaskSubmission,
     utcnow,
 )
-from ..services import categories
+from ..services import categories, photos
 from ..services import points as ledger
 
 ns = Namespace("tasks", description="Tasks parents give their kids")
@@ -152,14 +152,26 @@ class TaskResource(Resource):
 class SubmitTask(Resource):
     @roles_required(ROLE_CHILD)
     def post(self, task_id):
-        """"I did it": the kid sends their task to a parent to check, with an optional note."""
+        """"I did it": the kid sends their task to a parent to check. Send JSON {note}, or form
+        data with "note" and an optional "photo" (JPEG or PNG, up to 5 MB)."""
         task = _visible_task_or_404(task_id)
-        p = Payload()
+        is_form = request.mimetype == "multipart/form-data"
+        p = Payload(request.form.to_dict()) if is_form else Payload()
         note = p.text("note", max_len=500)
         p.validate()
+
+        upload = request.files.get("photo") if is_form else None
+        photo = None
+        if upload is not None and upload.filename:
+            try:
+                photo = photos.save(upload)
+            except photos.PhotoError as error:
+                abort(400, str(error), errors={"photo": str(error)})
+
         if not transition(Task, task.id, TASK_OPEN, status=TASK_SUBMITTED, updated_at=utcnow()):
+            photos.delete_files([photo])
             abort(409, "This task can't be sent right now.")
-        submission = TaskSubmission(task_id=task.id, child_id=current_user.id, note=note)
+        submission = TaskSubmission(task_id=task.id, child_id=current_user.id, note=note, photo=photo)
         db.session.add(submission)
         db.session.commit()
         db.session.refresh(task)
@@ -200,6 +212,25 @@ class SubmissionList(Resource):
         stmt = stmt.options(joinedload(TaskSubmission.task), joinedload(TaskSubmission.child),
                             joinedload(TaskSubmission.reviewed_by))
         return {"items": [s.to_dict() for s in db.session.scalars(stmt.order_by(order).limit(limit))]}
+
+
+@ns.route("/submissions/<int:submission_id>/photo")
+class SubmissionPhoto(Resource):
+    @roles_required(ROLE_PARENT, ROLE_CHILD)
+    def get(self, submission_id):
+        """The photo a kid added as proof. For the family's parents and the kid who sent it."""
+        submission = _family_submission_or_404(submission_id)
+        if current_user.role == ROLE_CHILD and submission.child_id != current_user.id:
+            abort(404, "Submission not found.")
+        path = photos.path_for(submission.photo)
+        if path is None:
+            abort(404, "No photo.")
+        # Read it into memory (at most 5 MB) so no file stays open: on Windows an open
+        # file couldn't be deleted when the kid is removed.
+        with open(path, "rb") as fh:
+            body = fh.read()
+        return Response(body, mimetype=photos.mimetype_for(submission.photo), headers={
+            "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @ns.route("/submissions/<int:submission_id>/approve")

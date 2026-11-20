@@ -4,6 +4,7 @@ Reading at creation time (not import time) means a `.env` file loaded by
 `create_app` is always respected.
 """
 import os
+import tempfile
 from datetime import timedelta
 
 DEV_SECRET = "dev-only-secret-key-change-me-0123456789abcdef"
@@ -42,13 +43,19 @@ def build_config(env_name):
         "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=_int("ACCESS_TOKEN_MINUTES", 15)),
         "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=_int("REFRESH_TOKEN_DAYS", 30)),
         "JWT_REFRESH_COOKIE_PATH": "/api/v1/auth/",
+        # Task photos are at most 5 MB; anything much bigger is refused before it's read.
+        "MAX_CONTENT_LENGTH": 6 * 1024 * 1024,
+        # Where task photos are kept. Empty means backend/instance/uploads.
+        "UPLOAD_FOLDER": os.environ.get("UPLOAD_FOLDER"),
         "ENABLE_API_DOCS": True,
         "RESTX_MASK_SWAGGER": False,
         "RESTX_ERROR_404_HELP": False,
     }
 
     if env_name == "testing":
-        config.update(TESTING=True, ENABLE_API_DOCS=False, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+        # Photos go to a throwaway folder (the test fixture removes it).
+        config.update(TESTING=True, ENABLE_API_DOCS=False, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+                      UPLOAD_FOLDER=tempfile.mkdtemp(prefix="quest-ed-test-"))
     elif env_name == "production":
         missing = [key for key in ("SECRET_KEY", "JWT_SECRET_KEY") if not os.environ.get(key)]
         if missing:

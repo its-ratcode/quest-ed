@@ -18,6 +18,8 @@ class TaskSubmission(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=False, index=True)
     child_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     note = db.Column(db.Text, nullable=False, default="")
+    # Optional photo the kid added as proof: a file name in the uploads folder (services/photos.py).
+    photo = db.Column(db.String(64), nullable=True)
     status = db.Column(db.String(20), nullable=False, default=SUBMISSION_PENDING, index=True)
     points_awarded = db.Column(db.Integer, nullable=True)
     review_note = db.Column(db.Text, nullable=False, default="")
@@ -35,6 +37,7 @@ class TaskSubmission(db.Model):
             "task_id": self.task_id,
             "child": user_brief(self.child),
             "note": self.note,
+            "has_photo": bool(self.photo),
             "status": self.status,
             "points_awarded": self.points_awarded,
             "review_note": self.review_note,

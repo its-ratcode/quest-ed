@@ -8,6 +8,7 @@ import { useApi } from '../../hooks/useApi'
 import { relativeTime } from '../../utils/format'
 import { useCategories } from '../categories/useCategories'
 import ReviewModal from './ReviewModal'
+import SubmissionPhoto from './SubmissionPhoto'
 
 /** The parent's "Ready for your approval" panel: every "I did it" waiting, oldest first. */
 export default function ApprovalsPanel() {
@@ -47,6 +48,7 @@ export default function ApprovalsPanel() {
                 <div className="task-title">{s.task?.title} · <span className="points-bubble">+{s.task?.points} pts</span></div>
                 <div className="task-detail">{s.child?.display_name} submitted · {relativeTime(s.submitted_at)}</div>
                 {s.note && <span className="task-note">“{s.note}”</span>}
+                {s.has_photo && <SubmissionPhoto submission={s} />}
               </div>
               <div className="task-actions">
                 <button type="button" className="btn mint small" onClick={() => setReview({ submission: s, action: 'approve' })}

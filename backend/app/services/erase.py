@@ -10,9 +10,13 @@ from ..models import PointTransaction, Task, TaskSubmission
 
 
 def erase_child(child):
-    """Delete a kid's account and everything that belongs to them. The caller commits."""
+    """Delete a kid's account and everything that belongs to them. The caller commits,
+    then deletes the returned photo files (photos.delete_files)."""
     task_ids = select(Task.id).where(Task.assigned_to_id == child.id)
+    photo_names = [name for name in db.session.scalars(
+        select(TaskSubmission.photo).where(TaskSubmission.task_id.in_(task_ids))) if name]
     db.session.execute(delete(PointTransaction).where(PointTransaction.child_id == child.id))
     db.session.execute(delete(TaskSubmission).where(TaskSubmission.task_id.in_(task_ids)))
     db.session.execute(delete(Task).where(Task.assigned_to_id == child.id))
     db.session.delete(child)
+    return photo_names

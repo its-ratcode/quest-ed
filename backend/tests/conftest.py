@@ -1,3 +1,5 @@
+import shutil
+
 import pure_sqlalchemy  # noqa: F401  see backend/pure_sqlalchemy.py
 import pytest
 
@@ -25,6 +27,11 @@ class ApiClient:
     def post(self, path, json=None):
         return self.raw.post(API + path, json=json, headers=self._headers(API + path))
 
+    def upload(self, path, data):
+        """Send form data with files, like the web app's photo upload."""
+        return self.raw.post(API + path, data=data, content_type="multipart/form-data",
+                             headers=self._headers(API + path))
+
     def put(self, path, json=None):
         return self.raw.put(API + path, json=json, headers=self._headers(API + path))
 
@@ -42,6 +49,7 @@ def app():
     with application.app_context():
         db.session.remove()
         db.drop_all()
+    shutil.rmtree(application.config["UPLOAD_FOLDER"], ignore_errors=True)
 
 
 @pytest.fixture

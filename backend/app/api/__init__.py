@@ -9,6 +9,9 @@ from flask_jwt_extended.exceptions import (
 )
 from flask_restx import Api
 from jwt.exceptions import ExpiredSignatureError, PyJWTError
+from werkzeug.exceptions import RequestEntityTooLarge
+
+from ..services.photos import TOO_BIG
 
 
 def create_api_blueprint(enable_docs=True):
@@ -36,6 +39,11 @@ def create_api_blueprint(enable_docs=True):
         if isinstance(error, NoAuthorizationError):
             return {"message": "Please sign in to continue.", "error": "unauthorized"}, 401
         return {"message": "Your session is not valid. Please sign in again.", "error": "invalid_token"}, 401
+
+    @api.errorhandler(RequestEntityTooLarge)
+    def handle_too_large(error):
+        """Only photos are big enough to hit the size limit (MAX_CONTENT_LENGTH)."""
+        return {"message": TOO_BIG, "errors": {"photo": TOO_BIG}}, 413
 
     from .auth import ns as auth_ns
     from .categories import ns as categories_ns

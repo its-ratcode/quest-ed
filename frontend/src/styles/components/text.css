@@ -1,6 +1,7 @@
 /* Text helpers and full-page loading. */
 .h3 { font-size: 18px; line-height: 1.35; letter-spacing: -0.3px; }
 .text-2 { color: var(--muted); }
+.text-3 { color: var(--muted-2); }
 .small-text { font-size: 13px; }
 
 /* Things stacked with a small gap. */

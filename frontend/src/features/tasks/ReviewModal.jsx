@@ -5,6 +5,7 @@ import Modal from '../../components/ui/Modal'
 import { PointsPill } from '../../components/ui/Pills'
 import { getErrorMessage } from '../../utils/errors'
 import { notifyApprovalsChanged } from './approvalsEvents'
+import SubmissionPhoto from './SubmissionPhoto'
 
 /**
  * A parent approves an "I did it" (the kid gets the points) or sends it back with a note.
@@ -53,6 +54,7 @@ function ReviewForm({ review, onClose, onDone }) {
             <Avatar emoji={submission.child?.avatar} size="sm" /> {submission.child?.display_name}
           </div>
           {submission.note && <p className="small-text mt-2">“{submission.note}”</p>}
+          {submission.has_photo && <SubmissionPhoto submission={submission} size={220} />}
         </div>
         <label htmlFor="review-note" className="form-label">
           {approving ? 'Note (optional)' : 'What still needs doing? (optional)'}
