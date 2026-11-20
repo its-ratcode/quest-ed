@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authApi } from '../api/auth'
 import { familyApi } from '../api/family'
+import { pointsApi } from '../api/points'
 import { AppRoutes } from '../App'
 import { AuthProvider } from '../auth/AuthProvider'
 import { ToastProvider } from '../components/ui/toast/ToastProvider'
@@ -15,14 +16,17 @@ vi.mock('../api/family', () => ({
     rename: vi.fn(), setTimezone: vi.fn(), newInviteCode: vi.fn(),
   },
 }))
+vi.mock('../api/points', () => ({ pointsApi: { summary: vi.fn(), transactions: vi.fn(), adjust: vi.fn() } }))
 
 const PAT = { id: 1, role: 'parent', display_name: 'Pat Rivera', avatar: '🙂' }
-const MIA = { id: 2, role: 'child', display_name: 'Mia', username: 'mia', avatar: '🦄' }
+const MIA = { id: 2, role: 'child', display_name: 'Mia', username: 'mia', avatar: '🦄', points_balance: 25 }
 const FAMILY = { id: 1, name: 'The Riveras', invite_code: 'ABCD2345', timezone: 'Mars/Olympus' }
 
 function openFamily(members = [PAT, MIA]) {
   authApi.me.mockResolvedValue({ user: PAT, family: FAMILY })
   familyApi.get.mockResolvedValue({ family: FAMILY, members })
+  pointsApi.summary.mockResolvedValue({ balance: 25, earned_total: 25, spent_total: 0 })
+  pointsApi.transactions.mockResolvedValue({ items: [], total: 0, page: 1, per_page: 10 })
   return render(
     <MemoryRouter initialEntries={['/dashboard/family']}>
       <ToastProvider>
@@ -41,8 +45,10 @@ describe('family page', () => {
     openFamily()
     expect(await screen.findByRole('heading', { level: 1, name: 'The Riveras' })).toBeInTheDocument()
     const kids = screen.getByRole('region', { name: 'Kids' })
-    expect(within(kids).getByText('Mia')).toBeInTheDocument()
-    expect(within(kids).getByText('@mia')).toBeInTheDocument()
+    const mia = within(kids).getByRole('link', { name: "Open Mia's page" })
+    expect(mia).toHaveAttribute('href', '/dashboard/family/kids/2')
+    expect(within(mia).getByText('@mia')).toBeInTheDocument()
+    expect(within(mia).getByText('25 pts')).toBeInTheDocument()
     const parents = screen.getByRole('region', { name: 'Parents' })
     expect(within(parents).getByText('Pat Rivera (you)')).toBeInTheDocument()
   })
@@ -71,10 +77,11 @@ describe('family page', () => {
     expect(familyApi.get).toHaveBeenCalledTimes(2) // the list reloads
   })
 
-  it('edits a kid; a blank password keeps the old one', async () => {
+  it("edits a kid on their page; a blank password keeps the old one", async () => {
     const user = userEvent.setup()
     openFamily()
-    await user.click(await screen.findByRole('button', { name: 'Edit Mia' }))
+    await user.click(await screen.findByRole('link', { name: "Open Mia's page" }))
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
     const dialog = screen.getByRole('dialog', { name: 'Edit Mia' })
     const name = within(dialog).getByLabelText('Name')
     await user.clear(name)
@@ -120,10 +127,11 @@ describe('family page', () => {
     expect(familyApi.setTimezone).toHaveBeenCalledWith(Intl.DateTimeFormat().resolvedOptions().timeZone)
   })
 
-  it('removes a kid only with the right password', async () => {
+  it('removes a kid only with the right password, then goes back to the family', async () => {
     const user = userEvent.setup()
     openFamily()
-    await user.click(await screen.findByRole('button', { name: 'Edit Mia' }))
+    await user.click(await screen.findByRole('link', { name: "Open Mia's page" }))
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
     await user.click(screen.getByRole('button', { name: 'Remove Mia…' }))
     const dialog = screen.getByRole('dialog', { name: 'Remove Mia?' })
     expect(within(dialog).getByRole('button', { name: 'Remove for good' })).toBeDisabled()
@@ -142,5 +150,6 @@ describe('family page', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Remove for good' }))
     expect(familyApi.removeChild).toHaveBeenLastCalledWith(2, 'parent-pass-123')
     expect(await screen.findByText('Mia was removed.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'The Riveras' })).toBeInTheDocument()
   })
 })

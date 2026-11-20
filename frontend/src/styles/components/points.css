@@ -1,0 +1,51 @@
+/* Points: a row of numbers on top, and the history below it. */
+
+/* Numbers in a row: <div class="grid-stats"> with <StatCard>s. */
+.grid-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+.grid-stats + .widget-grid,
+.grid-stats + section { margin-top: var(--gap); }
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px var(--pad);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+.stat-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 15px; background: var(--mint-soft); }
+.stat-card.tone-sky .stat-icon { background: var(--sky-soft); }
+.stat-card.tone-lilac .stat-icon { background: var(--lilac-soft); }
+.stat-card.tone-butter .stat-icon { background: var(--butter-soft); }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 650; order: 1; }
+.stat-value { display: block; font-size: 25px; letter-spacing: -1px; font-weight: 800; margin-top: 2px; order: 2; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat-icon { order: 0; }
+
+/* The history: what happened, when, and how much. */
+.ledger { list-style: none; margin: 0; padding: 0; }
+.ledger li { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding: var(--row) 0; }
+.ledger li:first-child { border-top: none; padding-top: 0; }
+.amount-pos,
+.amount-neg { font-weight: 850; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.amount-pos { color: #216949; }
+.amount-neg { color: #725a82; } /* lilac, never red: taking points away isn't a telling-off */
+
+/* Buttons for one kid under their name. */
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--gap); }
+
+/* A kid in the family list: the whole row opens their page. */
+.kid-link { color: var(--ink); text-decoration: none; border-radius: 14px; border-top: 0 !important; padding: 12px !important; }
+li + li > .kid-link { margin-top: 2px; }
+.kid-link:hover { background: #f4f8f5; color: var(--ink); text-decoration: none; }
+
+/* The kid's points in the top bar, linking to their points page. */
+.points-link { font-size: 12px; padding: 10px 14px; text-decoration: none; }
+.points-link:hover { text-decoration: none; filter: brightness(0.97); }
+
+@media (max-width: 1250px) {
+  .grid-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .grid-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+}

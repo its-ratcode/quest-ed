@@ -11,6 +11,12 @@ export function formatPoints(value) {
   return `${numberFormat.format(n)} pt${Math.abs(n) === 1 ? '' : 's'}`
 }
 
+/** A change in points with its sign: 15 → "+15", -4 → "−4" (a real minus sign). */
+export function signedPoints(value) {
+  const n = Number(value) || 0
+  return `${n > 0 ? '+' : n < 0 ? '−' : ''}${numberFormat.format(Math.abs(n))}`
+}
+
 /** "YYYY-MM-DD" as a calendar day in the reader's time zone (not UTC midnight). */
 export function parseDateOnly(value) {
   if (!value) return null

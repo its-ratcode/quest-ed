@@ -87,10 +87,10 @@ export default function DashboardLayout() {
           </Link>
           {isKid && (
             <div className="topbar-right">
-              <span className="pill pill-success" style={{ fontSize: 12, padding: '10px 14px' }}
-                aria-label={`Your balance: ${formatNumber(user.points_balance)} points`}>
+              <Link to="/dashboard/points" className="pill pill-success points-link"
+                aria-label={`Your points: ${formatNumber(user.points_balance)}. Open My points`}>
                 {formatNumber(user.points_balance)} points
-              </span>
+              </Link>
             </div>
           )}
         </header>

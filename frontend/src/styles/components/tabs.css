@@ -1,4 +1,5 @@
-/* Tabs: a row of <button class="tab" aria-selected="true|false"> inside .tabs. */
+/* Tabs: a row of <button class="tab" aria-selected="true|false"> inside .tabs. The same look
+   works as a choice of two or three: role="radio" with aria-checked. */
 .tabs {
   display: inline-flex;
   gap: 4px;
@@ -19,7 +20,8 @@
   color: #637067;
   cursor: pointer;
 }
-.tab[aria-selected='true'] { background: #fff; box-shadow: 0 1px 5px #d9e1db; color: #1f2d25; }
+.tab[aria-selected='true'],
+.tab[aria-checked='true'] { background: #fff; box-shadow: 0 1px 5px #d9e1db; color: #1f2d25; }
 
 @media (max-width: 700px) {
   .tabs { width: 100%; }

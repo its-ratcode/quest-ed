@@ -10,6 +10,7 @@ const ALL_ITEMS = {
   child: [
     { to: '/dashboard', label: 'Today', icon: 'home', end: true },
     { to: '/dashboard/tasks', label: 'My tasks', short: 'Tasks', icon: 'tasks' },
+    { to: '/dashboard/points', label: 'My points', short: 'Points', icon: 'coins' },
   ],
   admin: [
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true },

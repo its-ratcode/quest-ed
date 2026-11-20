@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { familyApi } from '../../api/family'
 import { useAuth } from '../../auth/useAuth'
 import { Avatar } from '../../components/ui/Avatar'
-import PasswordConfirmModal from '../../components/ui/PasswordConfirmModal'
+import Icon from '../../components/ui/Icon'
+import { PointsPill } from '../../components/ui/Pills'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { useToast } from '../../components/ui/toast/useToast'
 import { useApi } from '../../hooks/useApi'
@@ -13,16 +15,13 @@ import { FamilyName } from './FamilyName'
 import { InviteBox } from './InviteBox'
 import { TimezoneCard } from './TimezoneCard'
 
-const CLOSED = { open: false, child: null }
-
-/** The family's people. Parents add, edit and remove kids here. */
+/** The family's people. Parents add kids here, and open a kid to edit them or see their points. */
 export default function FamilyPage() {
   const { user, refreshUser } = useAuth()
   const toast = useToast()
   const isParent = user.role === 'parent'
   const family = useApi((signal) => familyApi.get(signal), [])
-  const [childForm, setChildForm] = useState(CLOSED)
-  const [removing, setRemoving] = useState(null)
+  const [adding, setAdding] = useState(false)
 
   if (family.loading && !family.data) return <LoadingState rows={3} label="Loading family" />
   if (family.error) return <ErrorState error={family.error} onRetry={family.reload} />
@@ -30,7 +29,7 @@ export default function FamilyPage() {
   const { family: info, members } = family.data
   const kids = members.filter((m) => m.role === 'child')
   const parents = members.filter((m) => m.role === 'parent')
-  const openAdd = () => setChildForm({ open: true, child: null })
+  const openAdd = () => setAdding(true)
 
   /** Saves a family setting; shows the outcome, and throws on failure so a form can stay open. */
   async function saveSetting(save, success) {
@@ -75,17 +74,25 @@ export default function FamilyPage() {
           ) : (
             <ul className="list-plain widget-body limit">
               {kids.map((kid) => (
-                <li key={kid.id} className="list-row">
-                  <Avatar emoji={kid.avatar} />
-                  <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                    <div className="fw-600">{kid.display_name}{kid.id === user.id ? ' (you)' : ''}</div>
-                    {isParent && <div className="small-text text-2 one-line">@{kid.username}</div>}
-                  </div>
-                  {isParent && (
-                    <button type="button" className="btn secondary small" onClick={() => setChildForm({ open: true, child: kid })}
-                      aria-label={`Edit ${kid.display_name}`}>
-                      Edit
-                    </button>
+                <li key={kid.id}>
+                  {isParent ? (
+                    // Everything about one kid (editing, points…) is on their own page.
+                    <Link to={`/dashboard/family/kids/${kid.id}`} className="list-row kid-link"
+                      aria-label={`Open ${kid.display_name}'s page`}>
+                      <Avatar emoji={kid.avatar} />
+                      <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                        <div className="fw-600">{kid.display_name}</div>
+                        <div className="small-text text-2 one-line">@{kid.username}</div>
+                      </div>
+                      <PointsPill value={kid.points_balance} />
+                      <span className="text-3" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>
+                    </Link>
+                  ) : (
+                    <div className="list-row">
+                      <Avatar emoji={kid.avatar} />
+                      <div className="flex-grow-1 fw-600">{kid.display_name}{kid.id === user.id ? ' (you)' : ''}</div>
+                      {'points_balance' in kid && <PointsPill value={kid.points_balance} />}
+                    </div>
                   )}
                 </li>
               ))}
@@ -126,35 +133,13 @@ export default function FamilyPage() {
       )}
 
       <ChildFormModal
-        open={childForm.open}
-        child={childForm.child}
-        onClose={() => setChildForm(CLOSED)}
-        onSaved={(saved, edited, newPassword) => {
-          toast.success(edited
-            ? `${saved.display_name} is updated${newPassword ? ', with the new password' : ''}.`
-            : `${saved.display_name} can now sign in as “${saved.username}”.`)
+        open={adding}
+        onClose={() => setAdding(false)}
+        onSaved={(saved) => {
+          toast.success(`${saved.display_name} can now sign in as “${saved.username}”.`)
           family.reload()
-        }}
-        onRemove={() => {
-          setRemoving(childForm.child)
-          setChildForm(CLOSED)
         }}
       />
-
-      <PasswordConfirmModal
-        open={Boolean(removing)}
-        title={`Remove ${removing?.display_name}?`}
-        confirmLabel="Remove for good"
-        onClose={() => setRemoving(null)}
-        onConfirm={async (password) => {
-          await familyApi.removeChild(removing.id, password)
-          toast.success(`${removing.display_name} was removed.`)
-          setRemoving(null)
-          family.reload()
-        }}
-      >
-        This deletes {removing?.display_name}'s account and everything about them. It can't be undone.
-      </PasswordConfirmModal>
     </>
   )
 }

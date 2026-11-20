@@ -15,6 +15,13 @@ export function RequireAuth() {
   return <Outlet />
 }
 
+/** Pages for some roles only (the menu hides them too; the API enforces the same rules). */
+export function RequireRole({ roles }) {
+  const { user } = useAuth()
+  if (!roles.includes(user?.role)) return <Navigate to="/dashboard" replace />
+  return <Outlet />
+}
+
 /**
  * People who arrive on the sign-in or sign-up page already signed in skip it.
  * Someone who signs in or up *on* the page stays put: the page itself then takes them
