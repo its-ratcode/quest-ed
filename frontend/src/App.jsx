@@ -8,6 +8,7 @@ import FamilyPage from './features/family/FamilyPage'
 import KidProfilePage from './features/family/KidProfilePage'
 import PointsPage from './features/points/PointsPage'
 import ProfilePage from './features/profile/ProfilePage'
+import RewardsPage from './features/rewards/RewardsPage'
 import TasksPage from './features/tasks/TasksPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
@@ -28,6 +29,9 @@ export function AppRoutes() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="family" element={<FamilyPage />} />
           <Route path="tasks" element={<TasksPage />} />
+          <Route element={<RequireRole roles={['parent', 'child']} />}>
+            <Route path="rewards" element={<RewardsPage />} />
+          </Route>
           <Route element={<RequireRole roles={['parent']} />}>
             <Route path="family/kids/:kidId" element={<KidProfilePage />} />
           </Route>

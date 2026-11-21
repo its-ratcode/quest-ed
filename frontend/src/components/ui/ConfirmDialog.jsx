@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { getErrorMessage } from '../../utils/errors'
 import Modal from './Modal'
 
-/** "Are you sure?" for actions that matter. `onConfirm` may return a promise. tone: primary | danger | mint */
+/**
+ * "Are you sure?" for actions that matter. `onConfirm` may return a promise. tone: primary | danger | mint.
+ * `cancelLabel` renames the way out when the action itself is a cancel ("Keep it").
+ */
 export default function ConfirmDialog({
-  open, title, message, confirmLabel = 'Confirm', tone = 'primary', onConfirm, onClose, children,
+  open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'primary', onConfirm, onClose, children,
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -36,7 +39,7 @@ export default function ConfirmDialog({
       footer={
         <>
           <button type="button" className="btn secondary" onClick={handleClose} disabled={busy}>
-            Cancel
+            {cancelLabel}
           </button>
           <button type="button" className={`btn ${tone}`} onClick={handleConfirm} disabled={busy} data-autofocus>
             {busy ? 'Working…' : confirmLabel}

@@ -5,11 +5,13 @@ const ALL_ITEMS = {
     // badge: shows how many "I did it"s are waiting.
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true, badge: 'approvals' },
     { to: '/dashboard/tasks', label: 'Tasks & routines', short: 'Tasks', icon: 'tasks' },
+    { to: '/dashboard/rewards', label: 'Rewards', icon: 'gift' },
     { to: '/dashboard/family', label: 'Family & kids', short: 'Family', icon: 'family' },
   ],
   child: [
     { to: '/dashboard', label: 'Today', icon: 'home', end: true },
     { to: '/dashboard/tasks', label: 'My tasks', short: 'Tasks', icon: 'tasks' },
+    { to: '/dashboard/rewards', label: 'Reward shop', short: 'Shop', icon: 'gift' },
     { to: '/dashboard/points', label: 'My points', short: 'Points', icon: 'coins' },
   ],
   admin: [
@@ -28,8 +30,8 @@ export function navItemsFor(user) {
 
 // Phones: a bottom bar with up to four pages, then "More" for everything else.
 const MOBILE_PRIMARY = {
-  parent: ['/dashboard', '/dashboard/tasks', '/dashboard/family'],
-  child: ['/dashboard', '/dashboard/tasks'],
+  parent: ['/dashboard', '/dashboard/tasks', '/dashboard/rewards', '/dashboard/family'],
+  child: ['/dashboard', '/dashboard/tasks', '/dashboard/rewards'],
   admin: ['/dashboard'],
 }
 
