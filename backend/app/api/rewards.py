@@ -127,10 +127,11 @@ class RedemptionList(Resource):
     @roles_required(ROLE_PARENT, ROLE_CHILD)
     def get(self):
         """Rewards kids bought, a page at a time (?page=, ?per_page=). ?status=pending|fulfilled|
-        cancelled|all (default all). Waiting ones come oldest first, the rest newest first.
+        cancelled|done|all (default all); done is handed over or cancelled, for the history.
+        Waiting ones come oldest first, the rest newest first.
         Kids see their own; parents see the family, or one kid with ?child_id=."""
         status = request.args.get("status", "all")
-        allowed = (*REDEMPTION_STATUSES, "all")
+        allowed = (*REDEMPTION_STATUSES, "done", "all")
         if status not in allowed:
             abort(400, f"status must be one of: {', '.join(allowed)}.")
 
@@ -141,7 +142,9 @@ class RedemptionList(Resource):
             child_id = query_int("child_id")
             if child_id is not None:
                 stmt = stmt.where(Redemption.child_id == family_child_or_404(child_id).id)
-        if status != "all":
+        if status == "done":
+            stmt = stmt.where(Redemption.status != REDEMPTION_PENDING)
+        elif status != "all":
             stmt = stmt.where(Redemption.status == status)
 
         page = query_int("page", default=1, min_value=1)

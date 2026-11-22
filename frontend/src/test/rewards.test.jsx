@@ -28,17 +28,25 @@ const SHOP = [
   reward(3, 'Zoo trip', 200, { emoji: '🦁' }),
   reward(4, 'Sticker', 5, { stock: 0 }),
 ]
-const bought = (id, title, cost) => ({
+const bought = (id, title, cost, more = {}) => ({
   id, reward_id: 2, reward_title: title, reward_emoji: '🎬', cost, status: 'pending',
-  child: { id: 2, display_name: 'Mia' }, created_at: new Date().toISOString(),
+  child: { id: 2, display_name: 'Mia' }, created_at: new Date().toISOString(), ...more,
 })
 
-function open(user, { rewards = SHOP, waiting = [] } = {}) {
+// What the server has: purchases waiting to be handed over, and finished ones (the history).
+// Tests change these to say what the next request returns.
+let server
+
+function open(user, { rewards = SHOP, waiting = [], done = [], path = '/dashboard/rewards' } = {}) {
+  server = { waiting, done }
   authApi.me.mockResolvedValue({ user, family: FAMILY })
   rewardsApi.list.mockResolvedValue({ items: rewards })
-  rewardsApi.redemptions.mockResolvedValue({ items: waiting, total: waiting.length, page: 1, per_page: 100 })
+  rewardsApi.redemptions.mockImplementation(async ({ status, page = 1, per_page: perPage }) => {
+    const all = status === 'pending' ? server.waiting : server.done
+    return { items: all.slice((page - 1) * perPage, page * perPage), total: all.length, page, per_page: perPage }
+  })
   return render(
-    <MemoryRouter initialEntries={['/dashboard/rewards']}>
+    <MemoryRouter initialEntries={[path]}>
       <ToastProvider>
         <AuthProvider>
           <AppRoutes />
@@ -76,7 +84,7 @@ describe('the reward shop (kids)', () => {
     expect(within(dialog).getByText('10 pts')).toBeInTheDocument() // left after
 
     authApi.me.mockResolvedValue({ user: { ...MIA, points_balance: 10 }, family: FAMILY })
-    rewardsApi.redemptions.mockResolvedValue({ items: [bought(9, 'Movie night', 30)], total: 1, page: 1, per_page: 100 })
+    server.waiting = [bought(9, 'Movie night', 30)]
     await user.click(within(dialog).getByRole('button', { name: 'Spend 30 pts' }))
     expect(rewardsApi.redeem).toHaveBeenCalledWith(2)
     const done = await screen.findByRole('dialog', { name: 'Done' })
@@ -104,7 +112,8 @@ describe('the reward shop (kids)', () => {
     const waiting = await screen.findByRole('region', { name: 'Waiting to be given' })
     expect(within(waiting).getByText('On its way')).toBeInTheDocument()
     rewardsApi.cancel.mockResolvedValue({ redemption: { ...bought(9, 'Movie night', 30), status: 'cancelled' }, balance: 70 })
-    rewardsApi.redemptions.mockResolvedValue({ items: [], total: 0, page: 1, per_page: 100 })
+    server.waiting = []
+    server.done = [bought(9, 'Movie night', 30, { status: 'cancelled' })]
     await user.click(within(waiting).getByRole('button', { name: 'Cancel Movie night' }))
     const dialog = screen.getByRole('dialog', { name: 'Cancel this?' })
     expect(within(dialog).getByText('You get your 30 pts back.')).toBeInTheDocument()
@@ -113,6 +122,8 @@ describe('the reward shop (kids)', () => {
     expect(rewardsApi.cancel).toHaveBeenCalledWith(9)
     expect(await screen.findByText('Cancelled. Your points are back.')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Waiting to be given' })).not.toBeInTheDocument()
+    const history = await screen.findByRole('region', { name: 'History' })
+    expect(within(history).getByText('Cancelled')).toBeInTheDocument()
   })
 
   it('says to ask a parent when the shop is empty, and the menu leads here', async () => {
@@ -129,7 +140,6 @@ describe('rewards (parents)', () => {
     const user = userEvent.setup()
     open(PAT, { rewards: [] })
     expect(await screen.findByRole('heading', { level: 1, name: 'Rewards' })).toBeInTheDocument()
-    expect(rewardsApi.redemptions).not.toHaveBeenCalled()
     await user.click(await screen.findByRole('button', { name: 'Add your first reward' }))
     const dialog = screen.getByRole('dialog', { name: 'New reward' })
     await user.clear(within(dialog).getByLabelText('Cost in points'))
@@ -204,5 +214,76 @@ describe('rewards (parents)', () => {
     expect(screen.getAllByRole('article')).toHaveLength(1)
     await user.type(screen.getByRole('searchbox', { name: 'Search rewards' }), 'x')
     expect(screen.getByText('No rewards match “zoox”')).toBeInTheDocument()
+  })
+})
+
+describe('handing rewards over (parents)', () => {
+  const LEOS = bought(8, 'Ice cream', 10, { child: { id: 3, display_name: 'Leo' }, reward_emoji: '🍦' })
+  const MIAS = bought(9, 'Movie night', 30)
+
+  it('lists what is waiting, with a count in the menu', async () => {
+    open(PAT, { waiting: [LEOS, MIAS] })
+    const list = await screen.findByRole('region', { name: 'To hand over' })
+    expect(within(list).getByLabelText('2 waiting')).toHaveTextContent('2')
+    expect(within(list).getByText(/^Leo ·/)).toBeInTheDocument()
+    expect(within(list).getByRole('button', { name: 'Mark Movie night for Mia as given' })).toBeInTheDocument()
+    const menu = screen.getByRole('complementary', { name: 'Main navigation' })
+    expect(await within(within(menu).getByRole('link', { name: /Rewards/ })).findByLabelText('2 waiting')).toBeInTheDocument()
+    expect(rewardsApi.redemptions).toHaveBeenCalledWith({ status: 'pending', per_page: 5 }, expect.anything())
+  })
+
+  it('marking one as given moves it to the history and lowers the count', async () => {
+    const user = userEvent.setup()
+    open(PAT, { waiting: [LEOS, MIAS] })
+    rewardsApi.fulfill.mockImplementation(async () => {
+      server.waiting = [LEOS]
+      server.done = [{ ...MIAS, status: 'fulfilled' }]
+      return { redemption: server.done[0] }
+    })
+    await user.click(await screen.findByRole('button', { name: 'Mark Movie night for Mia as given' }))
+    expect(rewardsApi.fulfill).toHaveBeenCalledWith(9)
+    expect(await screen.findByText('Marked “Movie night” as given.')).toBeInTheDocument()
+    const history = await screen.findByRole('region', { name: 'History' })
+    expect(within(history).getByText('Received')).toBeInTheDocument()
+    const menu = screen.getByRole('complementary', { name: 'Main navigation' })
+    expect(await within(menu).findByLabelText('1 waiting')).toBeInTheDocument()
+  })
+
+  it('cancelling gives the kid their points back', async () => {
+    const user = userEvent.setup()
+    open(PAT, { waiting: [MIAS] })
+    rewardsApi.cancel.mockImplementation(async () => {
+      server.waiting = []
+      return { redemption: { ...MIAS, status: 'cancelled' }, balance: 70 }
+    })
+    await user.click(await screen.findByRole('button', { name: 'Cancel Movie night for Mia and refund' }))
+    const dialog = screen.getByRole('dialog', { name: 'Cancel this?' })
+    expect(within(dialog).getByText('30 pts go back to Mia.')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel and refund' }))
+    expect(rewardsApi.cancel).toHaveBeenCalledWith(9)
+    expect(await screen.findByText('Cancelled. The points went back.')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'To hand over' })).not.toBeInTheDocument()
+  })
+
+  it('shows why when it was already handed over or cancelled', async () => {
+    const user = userEvent.setup()
+    open(PAT, { waiting: [MIAS] })
+    rewardsApi.fulfill.mockRejectedValue({
+      isAxiosError: true, response: { status: 409, data: { message: 'This has already been handed over or cancelled.' } },
+    })
+    await user.click(await screen.findByRole('button', { name: 'Mark Movie night for Mia as given' }))
+    expect(await screen.findByText('This has already been handed over or cancelled.')).toBeInTheDocument()
+  })
+
+  it('pages through a long history, newest first', async () => {
+    const user = userEvent.setup()
+    const done = Array.from({ length: 12 }, (_, i) => bought(100 - i, `Treat ${i + 1}`, 5, { status: 'fulfilled' }))
+    open(PAT, { done })
+    const history = await screen.findByRole('region', { name: 'History' })
+    expect(within(history).getByText('1–10 of 12')).toBeInTheDocument()
+    expect(within(history).getByText(/Treat 1$/)).toBeInTheDocument()
+    await user.click(within(history).getByRole('button', { name: 'Next page' }))
+    expect(await within(history).findByText(/Treat 12$/)).toBeInTheDocument()
+    expect(rewardsApi.redemptions).toHaveBeenCalledWith({ status: 'done', page: 2, per_page: 10 }, expect.anything())
   })
 })

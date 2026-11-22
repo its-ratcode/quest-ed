@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
 import { CategoriesProvider } from '../../features/categories/CategoriesProvider'
+import { usePendingHandovers } from '../../features/rewards/usePendingHandovers'
 import { usePendingApprovals } from '../../features/tasks/usePendingApprovals'
 import { formatNumber } from '../../utils/format'
 import { initialsOf } from '../../utils/names'
@@ -11,11 +12,12 @@ import { mobileItemsFor, NAV_HEADING, navItemsFor, ROLE_LABEL } from './navigati
 import { SignOutButton } from './SignOutButton'
 
 /** The small dark count beside a menu entry, e.g. how many "I did it"s are waiting. */
-function NavCount({ item, approvals }) {
-  if (item.badge !== 'approvals' || approvals === 0) return null
+function NavCount({ item, counts }) {
+  const count = counts[item.badge] || 0
+  if (count === 0) return null
   return (
-    <span className="nav-count" aria-label={`${approvals} waiting`}>
-      {approvals > 99 ? '99+' : approvals}
+    <span className="nav-count" aria-label={`${count} waiting`}>
+      {count > 99 ? '99+' : count}
     </span>
   )
 }
@@ -41,7 +43,8 @@ export default function DashboardLayout() {
   const items = navItemsFor(user)
   const mobileItems = mobileItemsFor(user.role, items)
   const isKid = user.role === 'child'
-  const approvals = usePendingApprovals(user.role === 'parent')
+  const isParent = user.role === 'parent'
+  const counts = { approvals: usePendingApprovals(isParent), handovers: usePendingHandovers(isParent) }
   useFreshBalance(isKid)
 
   return (
@@ -59,7 +62,7 @@ export default function DashboardLayout() {
             <NavLink key={item.to} to={item.to} end={item.end} className="nav-item">
               <Icon name={item.icon} size={19} />
               <span>{item.label}</span>
-              <NavCount item={item} approvals={approvals} />
+              <NavCount item={item} counts={counts} />
             </NavLink>
           ))}
         </nav>
@@ -108,7 +111,7 @@ export default function DashboardLayout() {
           <NavLink key={item.to} to={item.to} end={item.end} className="bottom-item">
             <Icon name={item.icon} size={20} />
             {item.short || item.label}
-            {item.badge === 'approvals' && approvals > 0 && <span className="count-badge">{approvals}</span>}
+            {counts[item.badge] > 0 && <span className="count-badge">{counts[item.badge]}</span>}
           </NavLink>
         ))}
       </nav>

@@ -2,10 +2,10 @@
 // Menus only hide what a role can't use; the API enforces the same rules.
 const ALL_ITEMS = {
   parent: [
-    // badge: shows how many "I did it"s are waiting.
+    // badge: a count of what's waiting for the parent ("I did it"s, rewards to hand over).
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true, badge: 'approvals' },
     { to: '/dashboard/tasks', label: 'Tasks & routines', short: 'Tasks', icon: 'tasks' },
-    { to: '/dashboard/rewards', label: 'Rewards', icon: 'gift' },
+    { to: '/dashboard/rewards', label: 'Rewards', icon: 'gift', badge: 'handovers' },
     { to: '/dashboard/family', label: 'Family & kids', short: 'Family', icon: 'family' },
   ],
   child: [

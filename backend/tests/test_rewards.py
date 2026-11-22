@@ -125,6 +125,8 @@ def test_redemption_lists_and_who_can_do_what(api):
     assert pat.get("/rewards/redemptions").get_json()["total"] == 2
     assert pat.get(f"/rewards/redemptions?child_id={leo_id}").get_json()["total"] == 1
     assert pat.get("/rewards/redemptions?status=pending").get_json()["items"][0]["child"]["display_name"] == "Leo"
+    done = pat.get("/rewards/redemptions?status=done").get_json()  # the history: handed over or cancelled
+    assert [r["id"] for r in done["items"]] == [mias["id"]] and done["total"] == 1
     assert pat.get("/rewards/redemptions?status=nope").status_code == 400
     assert [r["id"] for r in mia.get("/rewards/redemptions").get_json()["items"]] == [mias["id"]]  # only her own
 

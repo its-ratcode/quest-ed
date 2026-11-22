@@ -2,46 +2,25 @@ import { useState } from 'react'
 import { rewardsApi } from '../../api/rewards'
 import { useAuth } from '../../auth/useAuth'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
-import { PointsPill, StatusPill } from '../../components/ui/Pills'
 import SearchBox from '../../components/ui/SearchBox'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { useToast } from '../../components/ui/toast/useToast'
 import { useApi } from '../../hooks/useApi'
 import { getErrorMessage } from '../../utils/errors'
-import { formatNumber, formatPoints, relativeTime } from '../../utils/format'
+import { formatNumber, formatPoints } from '../../utils/format'
 import { matches } from '../../utils/search'
 import RedeemModal from './RedeemModal'
+import RedemptionHistory from './RedemptionHistory'
+import RedemptionList from './RedemptionList'
 import RewardCard from './RewardCard'
 import RewardFormModal from './RewardFormModal'
-import { REDEMPTION_STATUS } from './rewardOptions'
+import { notifyHandoversChanged } from './usePendingHandovers'
 
 const SEARCH_FROM = 7 // a search box once there are more rewards than fit at a glance
 
-/** What a kid bought that a parent hasn't handed over yet. They can still change their mind. */
-function WaitingList({ items, onCancel }) {
-  return (
-    <ul className="list-plain">
-      {items.map((r) => (
-        <li key={r.id} className="list-row flex-wrap">
-          <div className="flex-grow-1" style={{ minWidth: 160 }}>
-            <div className="fw-600">{r.reward_emoji} {r.reward_title}</div>
-            <div className="small-text text-2">{relativeTime(r.created_at)}</div>
-          </div>
-          <PointsPill value={r.cost} />
-          <div className="d-flex gap-2 align-items-center">
-            <StatusPill status={r.status} map={REDEMPTION_STATUS} />
-            <button type="button" className="btn secondary small" onClick={() => onCancel(r)}
-              aria-label={`Cancel ${r.reward_title}`}>Cancel</button>
-          </div>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 /**
  * The reward shop. Kids spend their points here, and can cancel what a parent hasn't
- * handed over yet. Parents add, change and hide rewards.
+ * handed over yet. Parents add, change and hide rewards, and hand over what kids bought.
  */
 export default function RewardsPage() {
   const { user, refreshUser } = useAuth()
@@ -50,10 +29,8 @@ export default function RewardsPage() {
   const balance = user.points_balance || 0
 
   const rewards = useApi((signal) => rewardsApi.list(signal), [])
-  const waiting = useApi(
-    (signal) => (isParent ? Promise.resolve(null) : rewardsApi.redemptions({ status: 'pending', per_page: 100 }, signal)),
-    [isParent],
-  )
+  const waiting = useApi((signal) => rewardsApi.redemptions({ status: 'pending', per_page: 100 }, signal), [])
+  const [historyVersion, setHistoryVersion] = useState(0)
   const [query, setQuery] = useState('')
   const [form, setForm] = useState({ open: false, reward: null })
   const [redeeming, setRedeeming] = useState(null)
@@ -63,7 +40,15 @@ export default function RewardsPage() {
   const shown = items.filter((r) => matches(r.title, query))
   const waitingItems = waiting.data?.items || []
   const newReward = () => setForm({ open: true, reward: null })
-  const syncBalance = () => refreshUser().catch(() => {}) // a failed check keeps the last balance
+
+  /** After buying, handing over or cancelling: everything that shows it, and the kid's points. */
+  function refreshAfterChange() {
+    rewards.reload() // stock
+    waiting.reload()
+    setHistoryVersion((v) => v + 1)
+    if (isParent) notifyHandoversChanged()
+    else refreshUser().catch(() => {}) // a failed check keeps the last balance
+  }
 
   async function toggleActive(reward) {
     try {
@@ -74,6 +59,26 @@ export default function RewardsPage() {
       toast.error(getErrorMessage(err))
     }
   }
+
+  async function fulfill(redemption) {
+    try {
+      await rewardsApi.fulfill(redemption.id)
+      toast.success(`Marked “${redemption.reward_title}” as given.`)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+    refreshAfterChange() // also after an error: a kid may have cancelled it meanwhile
+  }
+
+  const handOver = isParent && waitingItems.length > 0 && (
+    <section className="card-soft" aria-labelledby="handover-title">
+      <div className="section-top">
+        <h2 id="handover-title" className="card-title">To hand over</h2>
+        <span className="count-badge" aria-label={`${waitingItems.length} waiting`}>{waitingItems.length}</span>
+      </div>
+      <RedemptionList items={waitingItems} viewerRole="parent" onFulfill={fulfill} onCancel={setCancelling} />
+    </section>
+  )
 
   return (
     <>
@@ -90,6 +95,8 @@ export default function RewardsPage() {
       </div>
 
       <div className="stack">
+        {handOver}
+
         <section aria-label="Rewards">
           {rewards.loading && !rewards.data ? (
             <LoadingState rows={3} label="Loading rewards" />
@@ -131,9 +138,11 @@ export default function RewardsPage() {
         {!isParent && waitingItems.length > 0 && (
           <section className="card-soft" aria-labelledby="waiting-title">
             <h2 id="waiting-title" className="card-title mb-3">Waiting to be given</h2>
-            <WaitingList items={waitingItems} onCancel={setCancelling} />
+            <RedemptionList items={waitingItems} viewerRole="child" onCancel={setCancelling} />
           </section>
         )}
+
+        <RedemptionHistory viewerRole={user.role} version={historyVersion} />
       </div>
 
       {isParent && (
@@ -145,21 +154,17 @@ export default function RewardsPage() {
       )}
 
       <RedeemModal reward={redeeming} balance={balance} onClose={() => setRedeeming(null)}
-        onRedeemed={() => {
-          syncBalance()
-          rewards.reload()
-          waiting.reload()
-        }} />
+        onRedeemed={refreshAfterChange} />
 
       <ConfirmDialog open={Boolean(cancelling)} title="Cancel this?"
-        message={cancelling ? `You get your ${formatPoints(cancelling.cost)} back.` : ''}
-        confirmLabel="Cancel and get points back" cancelLabel="Keep it"
+        message={cancelling && (isParent
+          ? `${formatPoints(cancelling.cost)} go back to ${cancelling.child?.display_name}.`
+          : `You get your ${formatPoints(cancelling.cost)} back.`)}
+        confirmLabel={isParent ? 'Cancel and refund' : 'Cancel and get points back'} cancelLabel="Keep it"
         onConfirm={async () => {
           await rewardsApi.cancel(cancelling.id)
-          toast.success('Cancelled. Your points are back.')
-          syncBalance()
-          rewards.reload()
-          waiting.reload()
+          toast.success(isParent ? 'Cancelled. The points went back.' : 'Cancelled. Your points are back.')
+          refreshAfterChange()
         }}
         onClose={() => setCancelling(null)} />
     </>
