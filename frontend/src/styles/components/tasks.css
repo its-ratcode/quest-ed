@@ -169,6 +169,29 @@
 .cat-option.cat-new .task-icon { background: #eef4ef; color: #28674d; }
 .cat-draft { margin-top: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
 
+/* Round toggle buttons in a row (the routine's days). */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid #e0e7e1;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 11px;
+  font-weight: 750;
+  min-height: 44px;
+  color: #56645a;
+  cursor: pointer;
+}
+.chip:hover { border-color: #95b6a0; }
+.chip[aria-pressed='true'] { background: #21332a; border-color: #21332a; color: #fff; }
+.day-chip { min-width: 48px; }
+.btn.preset-btn { min-height: 30px; padding: 4px 10px; font-size: 13px; }
+
+/* A routine in the Routines tab. */
+.routine-card { display: flex; flex-direction: column; gap: 12px; }
+.routine-card.is-paused { opacity: 0.7; }
+.routine-card .task-meta { margin-top: -6px; }
+
 /* Points: a number box with quick values beside it. */
 .points-input { display: flex; gap: 8px; align-items: stretch; }
 .points-input input { width: 96px; flex: none; }

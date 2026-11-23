@@ -9,19 +9,18 @@ import { useToast } from '../../components/ui/toast/useToast'
 import { useApi } from '../../hooks/useApi'
 import SubmitTaskModal from './SubmitTaskModal'
 import TaskCard from './TaskCard'
-import TaskFormModal from './TaskFormModal'
 
 const PARENT_FILTERS = [['active', 'Active'], ['open', 'To do'], ['submitted', 'Waiting'], ['approved', 'Approved'],
-  ['archived', 'Archived']]
+  ['expired', 'Day ended'], ['archived', 'Archived']]
 const CHILD_FILTERS = [['active', 'All'], ['open', 'To do'], ['submitted', 'Waiting'], ['approved', 'Done']]
 const PER_PAGE = 20
-const CLOSED = { open: false, task: null }
 
 /**
  * The task list with its filters. Status, kid, search and page live in the address
  * (?status=open&child=3&q=bed&page=2), so a filtered list can be bookmarked or shared.
+ * `version` reloads it after a change made elsewhere (the task form lives on the page).
  */
-export default function TaskList({ isParent, kids, form, setForm }) {
+export default function TaskList({ isParent, kids, version = 0, onCreate, onEdit }) {
   const toast = useToast()
   const [params, setParams] = useSearchParams()
   const status = params.get('status') || 'active'
@@ -33,7 +32,7 @@ export default function TaskList({ isParent, kids, form, setForm }) {
 
   const tasks = useApi((signal) => tasksApi.list({
     status, page, per_page: PER_PAGE, ...(childId ? { child_id: childId } : {}), ...(query ? { q: query } : {}),
-  }, signal), [status, childId, page, query])
+  }, signal), [status, childId, page, query, version])
 
   function setParam(key, value) {
     const next = new URLSearchParams(params)
@@ -86,11 +85,13 @@ export default function TaskList({ isParent, kids, form, setForm }) {
               action={<Link to="/dashboard/family" className="btn primary">Add a child</Link>} />
           ) : (
             <EmptyState title={isParent ? 'No tasks here' : 'Nothing to do right now'}
-              message={isParent ? 'Tasks you give your kids will show up here.' : 'New tasks from your parents will show up here.'}
+              message={!isParent
+                ? 'New tasks from your parents will show up here.'
+                : status === 'expired'
+                  ? "Routine tasks that weren't done on their day end up here. It's just a record."
+                  : 'Tasks you give your kids will show up here.'}
               action={isParent && status === 'active' && (
-                <button type="button" className="btn secondary small" onClick={() => setForm({ open: true, task: null })}>
-                  Create a task
-                </button>
+                <button type="button" className="btn secondary small" onClick={onCreate}>Create a task</button>
               )} />
           )}
         </div>
@@ -99,21 +100,12 @@ export default function TaskList({ isParent, kids, form, setForm }) {
           <div className="task-list">
             {items.map((task) => (
               <TaskCard key={task.id} task={task} viewerRole={isParent ? 'parent' : 'child'}
-                onSubmit={setSubmitting} onEdit={(t) => setForm({ open: true, task: t })} onArchive={setArchiving} />
+                onSubmit={setSubmitting} onEdit={onEdit} onArchive={setArchiving} />
             ))}
           </div>
           <Pager page={page} perPage={PER_PAGE} total={tasks.data?.total ?? items.length} label="Task pages"
             onChange={(p) => setParam('page', p > 1 ? String(p) : '')} />
         </>
-      )}
-
-      {isParent && (
-        <TaskFormModal open={form.open} task={form.task} kids={kids} defaultChildId={childId ? Number(childId) : undefined}
-          onClose={() => setForm(CLOSED)}
-          onSaved={(task, edited, count) => {
-            toast.success(edited ? 'Task updated.' : `Task created${count > 1 ? ` for ${count} kids` : ''}.`)
-            tasks.reload()
-          }} />
       )}
 
       <SubmitTaskModal task={submitting} onClose={() => setSubmitting(null)}
@@ -125,7 +117,9 @@ export default function TaskList({ isParent, kids, form, setForm }) {
       <ConfirmDialog
         open={Boolean(archiving)}
         title={`Archive “${archiving?.title}”?`}
-        message="It leaves the kid's list. Its history, and any points already earned, are kept."
+        message={archiving?.routine
+          ? 'Only this copy is put away. The routine keeps going: to stop it, pause or delete it under Routines.'
+          : "It leaves the kid's list. Its history, and any points already earned, are kept."}
         confirmLabel="Archive"
         onClose={() => setArchiving(null)}
         onConfirm={async () => {

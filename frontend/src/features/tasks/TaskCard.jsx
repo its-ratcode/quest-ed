@@ -4,14 +4,18 @@ import { PointsPill, StatusPill } from '../../components/ui/Pills'
 import { dueInfo } from '../../utils/format'
 import { useCategories } from '../categories/useCategories'
 import { TASK_STATUS } from './taskStatus'
+import { describeWeekdays } from './weekdays'
 
 /**
  * One task in a `.task-list`: its category tile, title, status, due date, kid, points and
  * actions. Kids press "I did it"; a parent's note shows after sending back or approving.
+ * A routine's copy says which days it repeats on.
  */
 export default function TaskCard({ task, viewerRole, onSubmit, onEdit, onArchive }) {
   const category = useCategories().of(task.category)
-  const due = task.status === 'open' || task.status === 'submitted' ? dueInfo(task.due_date) : null
+  const dueSoon = task.status === 'open' || task.status === 'submitted' ? dueInfo(task.due_date) : null
+  // A routine's copy is always for today, so "Due today" says nothing new; "Was due …" still shows.
+  const due = dueSoon && !(task.routine && dueSoon.tone === 'soon') ? dueSoon : null
   const isParent = viewerRole === 'parent'
   const editable = task.status === 'open' || task.status === 'submitted'
   const latest = task.latest_submission
@@ -26,6 +30,7 @@ export default function TaskCard({ task, viewerRole, onSubmit, onEdit, onArchive
         <div className="task-meta">
           <StatusPill status={task.status} map={TASK_STATUS} />
           {due && <span className={`pill pill-${due.tone}`}>{due.label}</span>}
+          {task.routine && <span>Repeats {describeWeekdays(task.routine.weekdays).toLowerCase()}</span>}
           <span>{category.label}</span>
           {isParent && task.assigned_to && (
             <span className="d-inline-flex align-items-center gap-1 sep">
@@ -43,7 +48,7 @@ export default function TaskCard({ task, viewerRole, onSubmit, onEdit, onArchive
 
       <div className="task-side">
         <PointsPill value={task.points} />
-        {isParent && task.status !== 'archived' && (
+        {isParent && task.status !== 'archived' && task.status !== 'expired' && (
           <div className="task-actions">
             {editable && (
               <button type="button" className="btn secondary small" onClick={() => onEdit(task)}

@@ -4,4 +4,5 @@ export const TASK_STATUS = {
   submitted: { label: 'Waiting for parent', tone: 'warning' },
   approved: { label: 'Approved', tone: 'success' },
   archived: { label: 'Archived', tone: 'muted' },
+  expired: { label: 'Day ended', tone: 'muted' }, // a routine's copy that wasn't done on its day
 }
