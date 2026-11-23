@@ -6,6 +6,7 @@ TX_TASK_REWARD = "task_reward"  # a task was approved
 TX_ADJUSTMENT = "adjustment"    # a parent added or took away points by hand
 TX_REDEMPTION = "redemption"    # spent in the reward shop
 TX_REFUND = "refund"            # a reward was cancelled, so the points came back
+TX_BADGE_BONUS = "badge_bonus"  # extra points that came with a badge
 
 
 class PointTransaction(db.Model):

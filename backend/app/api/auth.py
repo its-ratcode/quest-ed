@@ -21,6 +21,7 @@ from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
 from ..extensions import db
 from ..models import ROLE_ADMIN, ROLE_PARENT, Family, TokenBlocklist, User, utcnow
+from ..services.badges import add_starter_badges
 from ..services.categories import add_starter_categories
 
 ns = Namespace("auth", description="Sign-up, sign-in and sessions")
@@ -74,6 +75,7 @@ class Register(Resource):
         if not invite_code:
             db.session.flush()  # gives the new family its id
             add_starter_categories(family.id)  # a starting point; parents can change all of them
+            add_starter_badges(family.id)
         db.session.commit()
         return _session_response(user, status=201)
 

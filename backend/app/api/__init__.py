@@ -46,6 +46,7 @@ def create_api_blueprint(enable_docs=True):
         return {"message": TOO_BIG, "errors": {"photo": TOO_BIG}}, 413
 
     from .auth import ns as auth_ns
+    from .badges import ns as badges_ns
     from .categories import ns as categories_ns
     from .family import ns as family_ns
     from .health import ns as health_ns
@@ -60,6 +61,7 @@ def create_api_blueprint(enable_docs=True):
     api.add_namespace(categories_ns, path="/categories")
     api.add_namespace(tasks_ns, path="/tasks")
     api.add_namespace(routines_ns, path="/routines")
+    api.add_namespace(badges_ns, path="/badges")
     api.add_namespace(points_ns, path="/points")
     api.add_namespace(rewards_ns, path="/rewards")
     return blueprint

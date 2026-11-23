@@ -25,13 +25,24 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+def family_tz(family):
+    """The family's time zone (UTC if it's unknown)."""
+    try:
+        return ZoneInfo(family.timezone or "UTC")
+    except (ZoneInfoNotFoundError, ValueError):
+        return timezone.utc
+
+
 def family_today(family):
     """Today's date where the family lives."""
-    try:
-        tz = ZoneInfo(family.timezone or "UTC")
-    except (ZoneInfoNotFoundError, ValueError):
-        tz = timezone.utc
-    return _now().astimezone(tz).date()
+    return _now().astimezone(family_tz(family)).date()
+
+
+def local_date(moment, tz):
+    """The calendar day a stored time (UTC) falls on in a time zone."""
+    if moment.tzinfo is None:  # SQLite gives times back without a zone; they're stored in UTC
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(tz).date()
 
 
 def _copy_for(routine, day):

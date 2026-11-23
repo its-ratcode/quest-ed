@@ -11,6 +11,7 @@ from ..models import (
     REDEMPTION_CANCELLED, REDEMPTION_FULFILLED, REDEMPTION_PENDING, REDEMPTION_STATUSES, ROLE_CHILD, ROLE_PARENT,
     TX_REDEMPTION, TX_REFUND, Redemption, Reward, utcnow,
 )
+from ..services import badges
 from ..services import points as ledger
 
 ns = Namespace("rewards", description="The family's reward shop, and kids spending their points")
@@ -117,6 +118,7 @@ class Redeem(Resource):
             abort(409, f"You need {reward.cost - current_user.points_balance} more points for this.",
                   error="insufficient_points")
         db.session.commit()
+        badges.evaluate(current_user)  # e.g. "First reward"
         db.session.refresh(reward)
         return {"redemption": redemption.to_dict(), "reward": reward.to_dict(),
                 "balance": current_user.points_balance}, 201
@@ -187,8 +189,9 @@ class Cancel(Resource):
             abort(409, "This has already been handed over or cancelled.")
 
         child = redemption.child
-        ledger.credit(child, redemption.cost, TX_REFUND, f"Cancelled: {redemption.reward_title}",
-                      created_by=current_user, redemption_id=redemption.id)
+        if redemption.cost:  # a reward that came free with a badge has nothing to give back
+            ledger.credit(child, redemption.cost, TX_REFUND, f"Cancelled: {redemption.reward_title}",
+                          created_by=current_user, redemption_id=redemption.id)
         db.session.execute(
             update(Reward).where(Reward.id == redemption.reward_id, Reward.stock.is_not(None))
             .values(stock=Reward.stock + 1),

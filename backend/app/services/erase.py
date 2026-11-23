@@ -3,10 +3,10 @@
 Each step that stores something about a kid (tasks, points, rewards, badges,
 photos…) adds it here, so removing a kid always removes everything about them.
 """
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 
 from ..extensions import db
-from ..models import PointTransaction, Redemption, Routine, Task, TaskSubmission
+from ..models import Badge, EarnedBadge, PointTransaction, Redemption, Routine, Task, TaskSubmission
 
 
 def erase_child(child):
@@ -14,6 +14,7 @@ def erase_child(child):
     then deletes the returned photo files (photos.delete_files)."""
     task_ids = select(Task.id).where(Task.assigned_to_id == child.id)
     routine_ids = select(Routine.id).where(Routine.assigned_to_id == child.id)
+    own_badge_ids = select(Badge.id).where(Badge.child_id == child.id)  # badges made just for this kid
     photo_names = [name for name in db.session.scalars(
         select(TaskSubmission.photo).where(TaskSubmission.task_id.in_(task_ids))) if name]
     db.session.execute(delete(PointTransaction).where(PointTransaction.child_id == child.id))
@@ -23,5 +24,9 @@ def erase_child(child):
     # A routine moved to this kid from a sibling still points to the sibling's old copies; they stay.
     db.session.execute(update(Task).where(Task.routine_id.in_(routine_ids)).values(routine_id=None))
     db.session.execute(delete(Routine).where(Routine.assigned_to_id == child.id))
+    # A badge made just for this kid may have been earned by a sibling before it was moved to them.
+    db.session.execute(delete(EarnedBadge).where(
+        or_(EarnedBadge.child_id == child.id, EarnedBadge.badge_id.in_(own_badge_ids))))
+    db.session.execute(delete(Badge).where(Badge.child_id == child.id))
     db.session.delete(child)
     return photo_names

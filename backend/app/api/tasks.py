@@ -14,7 +14,7 @@ from ..models import (
     TASK_APPROVED, TASK_ARCHIVED, TASK_EXPIRED, TASK_OPEN, TASK_STATUSES, TASK_SUBMITTED, TX_TASK_REWARD, Task,
     TaskSubmission, utcnow,
 )
-from ..services import categories, photos
+from ..services import badges, categories, photos
 from ..services import points as ledger
 from ..services.routines import ensure_for_user
 
@@ -254,8 +254,10 @@ class ApproveSubmission(Resource):
         ledger.credit(submission.child, task.points, TX_TASK_REWARD, f"Completed: {task.title}",
                       created_by=current_user, submission_id=submission.id)
         db.session.commit()
+        new_badges = badges.evaluate(submission.child)  # e.g. "First task", or a streak
         db.session.refresh(submission)
-        return {"submission": submission.to_dict(), "balance": submission.child.points_balance}
+        return {"submission": submission.to_dict(), "balance": submission.child.points_balance,
+                "new_badges": new_badges}
 
 
 @ns.route("/submissions/<int:submission_id>/reject")
