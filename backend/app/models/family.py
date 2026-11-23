@@ -21,6 +21,8 @@ class Family(db.Model):
     invite_code = db.Column(db.String(16), unique=True, nullable=False, default=generate_invite_code)
     # IANA name, e.g. "Europe/Berlin". Decides when a family's day starts.
     timezone = db.Column(db.String(64), nullable=False, default="UTC", server_default="UTC")
+    # The family's last day (in its time zone) that routines made their tasks for, so it's done once a day.
+    routines_checked_on = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     members = db.relationship("User", back_populates="family", order_by="User.id")

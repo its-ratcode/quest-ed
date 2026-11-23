@@ -97,6 +97,15 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # SQLite changes a table by building a new one and dropping the old one (batch mode).
+        # With foreign keys on, it refuses to drop a table that others point to (e.g. tasks,
+        # which task submissions point to). So they're off while migrating, and every foreign
+        # key is checked afterwards.
+        sqlite = connection.dialect.name == "sqlite"
+        if sqlite:
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
@@ -105,6 +114,13 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
+        if sqlite:
+            broken = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
+            if broken:
+                raise RuntimeError(f"Foreign keys point to missing rows after migrating: {broken}")
 
 
 if context.is_offline_mode():

@@ -4,7 +4,7 @@ import secrets
 from sqlalchemy import func, select
 
 from ..extensions import db
-from ..models import Category, Task
+from ..models import ROUTINE_ARCHIVED, Category, Routine, Task
 
 # key, label, picture, colour: what a new family starts with. Parents can change all of it.
 STARTER_CATEGORIES = (
@@ -63,11 +63,17 @@ def pick(p, family_id, current=None, required=True):
 
 
 def usage(family_id):
-    """key -> how many tasks use that category. (Routines and badges add their counts later.)"""
-    rows = db.session.execute(
-        select(Task.category, func.count(Task.id)).where(Task.family_id == family_id).group_by(Task.category)
-    )
-    return {key: count for key, count in rows if key}
+    """key -> how many tasks and routines (not deleted ones) use that category. (Badges add theirs later.)"""
+    counts = {}
+    for stmt in (
+        select(Task.category, func.count(Task.id)).where(Task.family_id == family_id).group_by(Task.category),
+        select(Routine.category, func.count(Routine.id))
+        .where(Routine.family_id == family_id, Routine.status != ROUTINE_ARCHIVED).group_by(Routine.category),
+    ):
+        for key, count in db.session.execute(stmt):
+            if key:
+                counts[key] = counts.get(key, 0) + count
+    return counts
 
 
 def new_key():

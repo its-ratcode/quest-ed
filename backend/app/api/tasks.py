@@ -11,15 +11,16 @@ from ..core.validation import Payload, query_int
 from ..extensions import db
 from ..models import (
     ROLE_CHILD, ROLE_PARENT, SUBMISSION_APPROVED, SUBMISSION_PENDING, SUBMISSION_REJECTED, SUBMISSION_STATUSES,
-    TASK_APPROVED, TASK_ARCHIVED, TASK_OPEN, TASK_STATUSES, TASK_SUBMITTED, TX_TASK_REWARD, Task, TaskSubmission,
-    utcnow,
+    TASK_APPROVED, TASK_ARCHIVED, TASK_EXPIRED, TASK_OPEN, TASK_STATUSES, TASK_SUBMITTED, TX_TASK_REWARD, Task,
+    TaskSubmission, utcnow,
 )
 from ..services import categories, photos
 from ..services import points as ledger
+from ..services.routines import ensure_for_user
 
 ns = Namespace("tasks", description="Tasks parents give their kids")
 
-STATUS_FILTERS = ("active", *TASK_STATUSES, "all")  # "active": everything not archived
+STATUS_FILTERS = ("active", *TASK_STATUSES, "all")  # "active": everything not archived or expired
 MAX_TASK_POINTS = 1000
 
 
@@ -40,6 +41,7 @@ class TaskList(Resource):
         status = request.args.get("status", "active")
         if status not in STATUS_FILTERS:
             abort(400, f"status must be one of: {', '.join(STATUS_FILTERS)}.")
+        ensure_for_user(current_user)  # today's routine tasks, on the first look of the day
 
         stmt = select(Task).where(Task.family_id == current_user.family_id)
         if current_user.role == ROLE_CHILD:
@@ -50,7 +52,7 @@ class TaskList(Resource):
                 stmt = stmt.where(Task.assigned_to_id == family_child_or_404(child_id).id)
 
         if status == "active":
-            stmt = stmt.where(Task.status != TASK_ARCHIVED)
+            stmt = stmt.where(Task.status.not_in((TASK_ARCHIVED, TASK_EXPIRED)))
         elif status != "all":
             stmt = stmt.where(Task.status == status)
 
@@ -110,7 +112,7 @@ class TaskResource(Resource):
     def patch(self, task_id):
         """Edit a task that isn't finished or archived."""
         task = family_object_or_404(Task, task_id, "Task")
-        if task.status in (TASK_APPROVED, TASK_ARCHIVED):
+        if task.status in (TASK_APPROVED, TASK_ARCHIVED, TASK_EXPIRED):
             abort(409, "Finished or archived tasks can't be edited.")
 
         p = Payload()

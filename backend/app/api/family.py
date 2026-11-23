@@ -9,6 +9,7 @@ from ..extensions import db
 from ..models import ROLE_CHILD, ROLE_PARENT, Family, User, generate_invite_code
 from ..services import photos
 from ..services.erase import erase_child
+from ..services.routines import ensure_family_day
 
 ns = Namespace("family", description="Your family, and your kids' accounts")
 
@@ -40,6 +41,8 @@ class FamilyResource(Resource):
         if p.has("timezone"):
             family.timezone = timezone
         db.session.commit()
+        if p.has("timezone"):
+            ensure_family_day(family.id, force=True)  # "today" may now be another day
         return _family_payload(current_user)
 
 
