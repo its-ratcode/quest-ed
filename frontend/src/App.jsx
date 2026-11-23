@@ -4,6 +4,7 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import { ToastProvider } from './components/ui/toast/ToastProvider'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
+import BadgesPage from './features/badges/BadgesPage'
 import FamilyPage from './features/family/FamilyPage'
 import KidProfilePage from './features/family/KidProfilePage'
 import PointsPage from './features/points/PointsPage'
@@ -31,6 +32,7 @@ export function AppRoutes() {
           <Route path="tasks" element={<TasksPage />} />
           <Route element={<RequireRole roles={['parent', 'child']} />}>
             <Route path="rewards" element={<RewardsPage />} />
+            <Route path="badges" element={<BadgesPage />} />
           </Route>
           <Route element={<RequireRole roles={['parent']} />}>
             <Route path="family/kids/:kidId" element={<KidProfilePage />} />

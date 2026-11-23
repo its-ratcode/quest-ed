@@ -1,0 +1,64 @@
+/* Badges: a grid of badge cards, progress bars, and the badge form's sections. */
+
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+.badge-card { padding: 19px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.badge-card h3 { font-size: 13px; margin: 0 0 5px; font-weight: 800; }
+.badge-card p { font-size: 11px; color: var(--muted); margin: 0 0 12px; }
+.badge-card.locked .badge-emblem { filter: grayscale(0.35); opacity: 0.65; }
+.badge-card .badge-prize {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: var(--butter-soft);
+  color: #6d5011;
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: -4px 0 10px;
+}
+.badge-card .progress-bar { height: 6px; margin: 10px 0 6px; }
+
+.badge-emblem {
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 13px;
+  border-radius: 25px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--butter-soft);
+  color: #926d33;
+}
+.badge-emblem.lilac { background: var(--lilac-soft); color: #735c9b; }
+.badge-emblem.sky { background: var(--sky-soft); color: #457ca1; }
+.badge-emblem.mint { background: var(--mint-soft); color: #2f7b57; }
+
+/* How far along: <ProgressBar>. */
+.progress-bar { background: #e9ede9; border-radius: 99px; width: 100%; height: 8px; overflow: hidden; }
+.progress-bar > span { height: 100%; display: block; border-radius: inherit; background: #54b38a; transition: width 0.25s; }
+.progress-bar.lilac > span { background: #a782e2; }
+.progress-bar.sky > span { background: #7db8e8; }
+.progress-bar.butter > span { background: #d5af4d; }
+
+/* A long form in parts, each with a small heading. */
+.form-section { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 4px; }
+.form-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+@media (max-width: 700px) {
+  .badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .badge-card { padding: 13px; }
+  .badge-emblem { width: 62px; height: 62px; border-radius: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar > span { transition: none; }
+}
