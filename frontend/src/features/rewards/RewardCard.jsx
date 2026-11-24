@@ -2,10 +2,12 @@ import { PointsPill } from '../../components/ui/Pills'
 import { formatNumber } from '../../utils/format'
 
 /**
- * One reward in the shop. Kids see "Get this", or how many points they still need.
- * Parents see Edit and Hide (or Show, for one that's hidden from the kids).
+ * One reward in the shop. Kids see "Get this", or how many points they still need and
+ * "Save for this". Parents see Edit and Hide (or Show, for one that's hidden from the kids).
  */
-export default function RewardCard({ reward, viewerRole, balance = 0, onRedeem, onEdit, onToggleActive }) {
+export default function RewardCard({
+  reward, viewerRole, balance = 0, isGoal = false, onRedeem, onEdit, onToggleActive, onToggleGoal,
+}) {
   const outOfStock = reward.stock !== null && reward.stock <= 0
   const missing = Math.max(0, reward.cost - balance)
 
@@ -36,9 +38,15 @@ export default function RewardCard({ reward, viewerRole, balance = 0, onRedeem, 
               Get this
             </button>
           ) : (
-            <span className="small-text text-2" aria-label={`You need ${missing} more points`}>
-              {formatNumber(missing)} more to go
-            </span>
+            <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+              <span className="small-text text-2" aria-label={`You need ${missing} more points`}>
+                {formatNumber(missing)} more to go
+              </span>
+              <button type="button" className={`btn small ${isGoal ? 'mint' : 'secondary'}`} aria-pressed={isGoal}
+                onClick={() => onToggleGoal(reward)} aria-label={`Save for ${reward.title}`}>
+                {isGoal ? '★ Saving for this' : 'Save for this'}
+              </button>
+            </div>
           )
         ) : (
           <div className="d-flex gap-2">

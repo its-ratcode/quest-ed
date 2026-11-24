@@ -37,6 +37,7 @@ export default function RewardsPage() {
   const [cancelling, setCancelling] = useState(null)
 
   const items = rewards.data?.items || []
+  const goalId = rewards.data?.goal_reward_id ?? null // kids only: what they're saving for
   const shown = items.filter((r) => matches(r.title, query))
   const waitingItems = waiting.data?.items || []
   const newReward = () => setForm({ open: true, reward: null })
@@ -54,6 +55,22 @@ export default function RewardsPage() {
     try {
       await rewardsApi.update(reward.id, { is_active: !reward.is_active })
       toast.success(reward.is_active ? 'Hidden from your kids.' : 'Your kids can see it again.')
+      rewards.reload()
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    }
+  }
+
+  /** A kid picks the reward to save for (it shows on their Today page), or stops saving for it. */
+  async function toggleGoal(reward) {
+    try {
+      if (goalId === reward.id) {
+        await rewardsApi.clearGoal()
+        toast.info(`You're not saving for “${reward.title}” any more.`)
+      } else {
+        await rewardsApi.setGoal(reward.id)
+        toast.success(`Saving for “${reward.title}”. It's on your Today page.`)
+      }
       rewards.reload()
     } catch (err) {
       toast.error(getErrorMessage(err))
@@ -126,8 +143,9 @@ export default function RewardsPage() {
                 <div className="grid-cards">
                   {shown.map((reward) => (
                     <RewardCard key={reward.id} reward={reward} viewerRole={user.role} balance={balance}
-                      onRedeem={setRedeeming} onEdit={(r) => setForm({ open: true, reward: r })}
-                      onToggleActive={toggleActive} />
+                      isGoal={goalId === reward.id} onRedeem={setRedeeming}
+                      onEdit={(r) => setForm({ open: true, reward: r })}
+                      onToggleActive={toggleActive} onToggleGoal={toggleGoal} />
                   ))}
                 </div>
               )}

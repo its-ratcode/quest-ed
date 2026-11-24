@@ -7,8 +7,12 @@ export const rewardsApi = {
   create: (payload) => unwrap(api.post('/rewards', payload)),
   /** Change any of title, description, emoji, cost, stock (null: no limit) or is_active. */
   update: (id, payload) => unwrap(api.patch(`/rewards/${id}`, payload)),
-  /** A kid buys it: { redemption, reward, balance }. The points go right away. */
+  /** A kid buys it: { redemption, reward, balance, goal_reached }. The points go right away. */
   redeem: (id) => unwrap(api.post(`/rewards/${id}/redeem`)),
+  /** A kid saves up for this reward (instead of any other). */
+  setGoal: (id) => unwrap(api.put(`/rewards/${id}/goal`)),
+  /** A kid stops saving for a reward. */
+  clearGoal: () => unwrap(api.delete('/rewards/goal')),
 
   /** What kids bought: { items, total, page, per_page }. Pass { status, child_id, page, per_page }. */
   redemptions: (params, signal) => unwrap(api.get('/rewards/redemptions', { params, signal })),

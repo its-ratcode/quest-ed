@@ -23,6 +23,7 @@ import './styles/components/tasks.css'
 import './styles/components/points.css'
 import './styles/components/rewards.css'
 import './styles/components/badges.css'
+import './styles/components/dashboard.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
