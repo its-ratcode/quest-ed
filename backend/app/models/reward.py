@@ -39,6 +39,20 @@ class Reward(db.Model):
         }
 
 
+class SavingsGoal(db.Model):
+    """The reward a kid is saving up for (one at a time). Kept in its own table so the users
+    table, which almost everything points to, doesn't need rebuilding for it."""
+
+    __tablename__ = "savings_goals"
+
+    child_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    family_id = db.Column(db.Integer, db.ForeignKey("families.id"), nullable=False, index=True)
+    reward_id = db.Column(db.Integer, db.ForeignKey("rewards.id"), nullable=False)
+    set_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    reward = db.relationship("Reward")
+
+
 class Redemption(db.Model):
     """A kid buying a reward. The points are taken right away; a parent then hands it over,
     or it's cancelled and the points go back. The reward's name and price are kept as they

@@ -11,7 +11,7 @@ from ..models import (
     REDEMPTION_CANCELLED, REDEMPTION_FULFILLED, REDEMPTION_PENDING, REDEMPTION_STATUSES, ROLE_CHILD, ROLE_PARENT,
     TX_REDEMPTION, TX_REFUND, Redemption, Reward, utcnow,
 )
-from ..services import badges
+from ..services import badges, goals
 from ..services import points as ledger
 
 ns = Namespace("rewards", description="The family's reward shop, and kids spending their points")
@@ -42,13 +42,17 @@ def _reward_fields(p, partial):
 class RewardList(Resource):
     @roles_required(ROLE_PARENT, ROLE_CHILD)
     def get(self):
-        """The family's rewards, cheapest first. Kids only see the ones in the shop;
-        parents also see the ones taken out (last)."""
+        """The family's rewards, cheapest first. Kids only see the ones in the shop, plus which
+        one they're saving for (goal_reward_id); parents also see the ones taken out (last)."""
         stmt = select(Reward).where(Reward.family_id == current_user.family_id)
         if current_user.role == ROLE_CHILD:
             stmt = stmt.where(Reward.is_active.is_(True))
         stmt = stmt.order_by(Reward.is_active.desc(), Reward.cost, Reward.id)
-        return {"items": [r.to_dict() for r in db.session.scalars(stmt)]}
+        data = {"items": [r.to_dict() for r in db.session.scalars(stmt)]}
+        if current_user.role == ROLE_CHILD:
+            goal = goals.savings_goal(current_user)
+            data["goal_reward_id"] = goal.id if goal else None
+        return data
 
     @roles_required(ROLE_PARENT)
     def post(self):
@@ -117,11 +121,35 @@ class Redeem(Resource):
             db.session.rollback()  # also puts the stock back
             abort(409, f"You need {reward.cost - current_user.points_balance} more points for this.",
                   error="insufficient_points")
+        goal_reached = goals.clear_goal(current_user, reward_id=reward.id)  # saved up for it: done
         db.session.commit()
         badges.evaluate(current_user)  # e.g. "First reward"
         db.session.refresh(reward)
         return {"redemption": redemption.to_dict(), "reward": reward.to_dict(),
-                "balance": current_user.points_balance}, 201
+                "balance": current_user.points_balance, "goal_reached": goal_reached}, 201
+
+
+@ns.route("/<int:reward_id>/goal")
+class Goal(Resource):
+    @roles_required(ROLE_CHILD)
+    def put(self, reward_id):
+        """A kid picks this reward to save up for (instead of any other)."""
+        reward = family_object_or_404(Reward, reward_id, "Reward")
+        if not reward.is_active:
+            abort(409, "This reward isn't in the shop anymore.", error="reward_inactive")
+        goals.set_goal(current_user, reward)
+        db.session.commit()
+        return {"goal": reward.to_dict()}
+
+
+@ns.route("/goal")
+class ClearGoal(Resource):
+    @roles_required(ROLE_CHILD)
+    def delete(self):
+        """Stop saving for a reward."""
+        goals.clear_goal(current_user)
+        db.session.commit()
+        return {"goal": None}
 
 
 @ns.route("/redemptions")

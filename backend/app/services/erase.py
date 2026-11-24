@@ -6,7 +6,7 @@ photos…) adds it here, so removing a kid always removes everything about them.
 from sqlalchemy import delete, or_, select, update
 
 from ..extensions import db
-from ..models import Badge, EarnedBadge, PointTransaction, Redemption, Routine, Task, TaskSubmission
+from ..models import Badge, EarnedBadge, PointTransaction, Redemption, Routine, SavingsGoal, Task, TaskSubmission
 
 
 def erase_child(child):
@@ -19,6 +19,7 @@ def erase_child(child):
         select(TaskSubmission.photo).where(TaskSubmission.task_id.in_(task_ids))) if name]
     db.session.execute(delete(PointTransaction).where(PointTransaction.child_id == child.id))
     db.session.execute(delete(Redemption).where(Redemption.child_id == child.id))
+    db.session.execute(delete(SavingsGoal).where(SavingsGoal.child_id == child.id))
     db.session.execute(delete(TaskSubmission).where(TaskSubmission.task_id.in_(task_ids)))
     db.session.execute(delete(Task).where(Task.assigned_to_id == child.id))
     # A routine moved to this kid from a sibling still points to the sibling's old copies; they stay.

@@ -1,7 +1,9 @@
+from datetime import date
+
 from flask import Response, request
 from flask_jwt_extended import current_user
 from flask_restx import Namespace, Resource, abort
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..core.security import (
@@ -37,7 +39,7 @@ class TaskList(Resource):
     @roles_required(ROLE_PARENT, ROLE_CHILD)
     def get(self):
         """Tasks you can see (kids: only their own). Filters: ?status=, ?child_id= (parents),
-        ?q= (title search). ?page= (with ?per_page=) returns one page plus the total."""
+        ?q= (title search), ?since= (a date). ?page= (with ?per_page=) returns one page plus the total."""
         status = request.args.get("status", "active")
         if status not in STATUS_FILTERS:
             abort(400, f"status must be one of: {', '.join(STATUS_FILTERS)}.")
@@ -61,6 +63,17 @@ class TaskList(Resource):
         if q:
             pattern = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
             stmt = stmt.where(Task.title.ilike(pattern, escape="\\"))
+
+        # ?since=YYYY-MM-DD: tasks for that day onwards, plus undated ones and anything still open
+        # or waiting (overdue jobs). The dashboards use it, so they stay fast however long the history gets.
+        since = request.args.get("since")
+        if since:
+            try:
+                since_day = date.fromisoformat(since)
+            except ValueError:
+                abort(400, "since must be a date like 2026-11-09.")
+            day = func.coalesce(Task.occurrence_date, Task.due_date)
+            stmt = stmt.where(or_(day.is_(None), day >= since_day, Task.status.in_((TASK_OPEN, TASK_SUBMITTED))))
 
         filtered = stmt  # counted for the total, before sorting
         # Coming up first: by due date (undated last), newest first within a day.

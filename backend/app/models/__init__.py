@@ -7,6 +7,7 @@ from .looks import PICTURES, TONES
 from .points import TX_ADJUSTMENT, TX_BADGE_BONUS, TX_REDEMPTION, TX_REFUND, TX_TASK_REWARD, PointTransaction
 from .reward import (
     REDEMPTION_CANCELLED, REDEMPTION_FULFILLED, REDEMPTION_PENDING, REDEMPTION_STATUSES, Redemption, Reward,
+    SavingsGoal,
 )
 from .routine import ALL_WEEKDAYS, ROUTINE_ACTIVE, ROUTINE_ARCHIVED, ROUTINE_PAUSED, ROUTINE_STATUSES, Routine
 from .submission import (
@@ -17,8 +18,8 @@ from .token_blocklist import TokenBlocklist
 from .user import ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, ROLES, User, user_brief
 
 __all__ = [
-    "Badge", "Category", "EarnedBadge", "Family", "PointTransaction", "Redemption", "Reward", "Routine", "Task",
-    "TaskSubmission", "TokenBlocklist", "User", "generate_invite_code", "iso", "user_brief", "utcnow",
+    "Badge", "Category", "EarnedBadge", "Family", "PointTransaction", "Redemption", "Reward", "Routine",
+    "SavingsGoal", "Task", "TaskSubmission", "TokenBlocklist", "User", "generate_invite_code", "iso", "user_brief", "utcnow",
     "BADGE_RULES", "PICTURES", "TONES", "ROLE_ADMIN", "ROLE_CHILD", "ROLE_PARENT", "ROLES",
     "REDEMPTION_CANCELLED", "REDEMPTION_FULFILLED", "REDEMPTION_PENDING", "REDEMPTION_STATUSES",
     "ALL_WEEKDAYS", "ROUTINE_ACTIVE", "ROUTINE_ARCHIVED", "ROUTINE_PAUSED", "ROUTINE_STATUSES",
