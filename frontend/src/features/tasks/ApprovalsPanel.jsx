@@ -10,8 +10,11 @@ import { useCategories } from '../categories/useCategories'
 import ReviewModal from './ReviewModal'
 import SubmissionPhoto from './SubmissionPhoto'
 
-/** The parent's "Ready for your approval" panel: every "I did it" waiting, oldest first. */
-export default function ApprovalsPanel() {
+/**
+ * The parent's "Ready for your approval" panel: every "I did it" waiting, oldest first.
+ * `onChanged` runs after each approval or send-back (the Overview refreshes its other panels).
+ */
+export default function ApprovalsPanel({ onChanged }) {
   const toast = useToast()
   const cats = useCategories()
   const [review, setReview] = useState(null)
@@ -71,6 +74,7 @@ export default function ApprovalsPanel() {
             ? `Approved. ${result.submission.child?.display_name} got ${result.submission.points_awarded} points.`
             : 'Sent back with your note.')
           pending.reload()
+          onChanged?.()
         }} />
     </section>
   )

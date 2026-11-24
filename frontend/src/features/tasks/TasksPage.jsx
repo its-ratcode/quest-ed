@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { routinesApi } from '../../api/routines'
 import { useAuth } from '../../auth/useAuth'
@@ -28,6 +28,17 @@ export default function TasksPage() {
   const routineCount = routines.data?.items?.length || 0
 
   const openNew = () => setForm({ ...CLOSED, open: true, repeat: view === 'routines' })
+
+  // "+ New task" on the Overview arrives as ?new=1: open the form once the kids are loaded
+  // (so the first kid is already picked), and take it out of the address.
+  const wantsNew = isParent && params.get('new') === '1'
+  if (wantsNew && kids.length > 0 && !form.open) setForm({ ...CLOSED, open: true, repeat: view === 'routines' })
+  useEffect(() => {
+    if (!wantsNew || !form.open) return
+    const next = new URLSearchParams(params)
+    next.delete('new')
+    setParams(next, { replace: true })
+  }, [wantsNew, form.open, params, setParams])
   const routinesChanged = () => {
     routines.reload()
     setTasksVersion((v) => v + 1) // today's copies may have changed too

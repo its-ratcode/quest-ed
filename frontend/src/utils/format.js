@@ -30,6 +30,14 @@ export function formatDate(value, options = { weekday: 'short', month: 'short', 
   return parseDateOnly(value).toLocaleDateString(undefined, options)
 }
 
+/** "Good morning", "Good afternoon" or "Good evening", by the reader's own clock. */
+export function greeting(date = new Date()) {
+  const hour = date.getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
 /** How long ago something happened: "just now", "5 min ago", "3h ago", "2d ago", then the date. */
 export function relativeTime(value, now = new Date()) {
   if (!value) return ''

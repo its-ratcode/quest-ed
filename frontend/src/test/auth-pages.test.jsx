@@ -133,7 +133,7 @@ describe('signing up', () => {
     expect(authApi.register).toHaveBeenCalledWith({
       display_name: 'Sam', email: 'sam@example.test', password: 'parent-pass-123', invite_code: 'abcd2345',
     })
-    expect(await screen.findByRole('heading', { name: 'Hi Pat' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening), Pat\.$/ })).toBeInTheDocument()
   })
 
   it("shows the server's message next to the field it's about", async () => {

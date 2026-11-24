@@ -68,7 +68,7 @@ describe('My points (kids)', () => {
 
   it("parents don't have a My points page", async () => {
     open('/dashboard/points', PAT)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Hi Pat' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: /, Pat\.$/ })).toBeInTheDocument() // the Overview
   })
 })
 
