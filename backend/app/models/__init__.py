@@ -1,4 +1,5 @@
 """Database models, one file per area. Import them from here: `from app.models import User`."""
+from .audit import AuditLog
 from .badge import BADGE_RULES, Badge, EarnedBadge
 from .base import iso, utcnow
 from .category import Category
@@ -18,7 +19,7 @@ from .token_blocklist import TokenBlocklist
 from .user import ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, ROLES, User, user_brief
 
 __all__ = [
-    "Badge", "Category", "EarnedBadge", "Family", "PointTransaction", "Redemption", "Reward", "Routine",
+    "AuditLog", "Badge", "Category", "EarnedBadge", "Family", "PointTransaction", "Redemption", "Reward", "Routine",
     "SavingsGoal", "Task", "TaskSubmission", "TokenBlocklist", "User", "generate_invite_code", "iso", "user_brief", "utcnow",
     "BADGE_RULES", "PICTURES", "TONES", "ROLE_ADMIN", "ROLE_CHILD", "ROLE_PARENT", "ROLES",
     "REDEMPTION_CANCELLED", "REDEMPTION_FULFILLED", "REDEMPTION_PENDING", "REDEMPTION_STATUSES",

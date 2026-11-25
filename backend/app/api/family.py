@@ -1,8 +1,8 @@
 import json
 import re
 
-from flask import Response
-from flask_jwt_extended import current_user, jwt_required
+from flask import Response, jsonify
+from flask_jwt_extended import current_user, jwt_required, unset_jwt_cookies
 from flask_restx import Namespace, Resource, abort
 from sqlalchemy import select
 
@@ -11,8 +11,8 @@ from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload, query_int
 from ..extensions import db
 from ..models import ROLE_CHILD, ROLE_PARENT, Family, User, generate_invite_code
-from ..services import photos
-from ..services.erase import erase_child
+from ..services import audit, photos
+from ..services.erase import erase_child, erase_family
 from ..services.export import build_export
 from ..services.routines import ensure_family_day, family_today
 
@@ -49,6 +49,26 @@ class FamilyResource(Resource):
         if p.has("timezone"):
             ensure_family_day(family.id, force=True)  # "today" may now be another day
         return _family_payload(current_user)
+
+    @roles_required(ROLE_PARENT)
+    def delete(self):
+        """Delete the whole family for good: every parent's and kid's account, and everything they
+        made (tasks, points, rewards, badges, photos). Needs your password. Can't be undone."""
+        p = Payload()
+        password = p.password("password", min_len=1)
+        p.validate()
+        confirm_password(current_user, password)
+
+        family_id = current_user.family_id
+        members = len(current_user.family.members)
+        photo_names = erase_family(family_id)
+        # Kept without any names or family, so an admin can see that it happened.
+        audit.record("family.deleted", target_type="family", target_id=family_id, members=members)
+        db.session.commit()
+        photos.delete_files(photo_names)  # only once the database change has really happened
+        response = jsonify(message="Your family and all its data have been deleted.")
+        unset_jwt_cookies(response)  # the account is gone, so is the session
+        return response
 
 
 def _family_payload(viewer):
@@ -96,6 +116,8 @@ class Children(Resource):
                      family_id=current_user.family_id)
         child.set_password(password)
         db.session.add(child)
+        db.session.flush()  # gives the kid an id for the log
+        audit.record("child.created", actor=current_user, target_type="user", target_id=child.id)
         db.session.commit()
         return {"child": child.to_dict()}, 201
 
@@ -120,6 +142,7 @@ class ChildResource(Resource):
             child.avatar = avatar
         if password:
             child.set_password(password)
+            audit.record("child.password_reset", actor=current_user, target_type="user", target_id=child.id)
         db.session.commit()
         return {"child": child.to_dict()}
 
@@ -133,7 +156,9 @@ class ChildResource(Resource):
         p.validate()
         confirm_password(current_user, password)
 
+        child_id = child.id
         photo_names = erase_child(child)
+        audit.record("child.deleted", actor=current_user, target_type="user", target_id=child_id)
         db.session.commit()
         photos.delete_files(photo_names)  # only once the database change has really happened
         return {"message": "Removed."}
@@ -152,6 +177,9 @@ class Export(Resource):
         family = current_user.family
 
         data = build_export(family, child=child, days=days)
+        audit.record("family.exported", actor=current_user, target_type="family", target_id=family.id,
+                     child_id=child_id, days=days)
+        db.session.commit()
         who = _slug(child.display_name if child else family.name)
         filename = f"quest-ed-{who}-{family_today(family).isoformat()}.json"
         return Response(json.dumps(data, ensure_ascii=False, indent=2), content_type="application/json; charset=utf-8",

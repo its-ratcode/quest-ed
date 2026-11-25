@@ -7,6 +7,7 @@ from ..core.security import family_child_or_404, family_object_or_404, roles_req
 from ..core.validation import Payload, query_int
 from ..extensions import db
 from ..models import BADGE_RULES, PICTURES, ROLE_CHILD, ROLE_PARENT, TONES, Badge, EarnedBadge, Reward, User
+from ..services import audit
 from ..services import badges as badge_service
 from ..services import categories
 
@@ -168,6 +169,9 @@ class AwardBadge(Resource):
             abort(409, "This badge is for a different kid.")
         try:
             given = badge_service.award(child, badge)
+            if given:
+                audit.record("badge.given", actor=current_user, target_type="badge", target_id=badge.id,
+                             child_id=child.id)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()  # given at the same moment by someone else; the prize isn't paid twice

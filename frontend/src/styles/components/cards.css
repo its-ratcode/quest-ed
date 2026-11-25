@@ -10,6 +10,7 @@
 .card.pad,
 .card-soft { padding: var(--pad); }
 .card-lilac { background: var(--lilac-soft); }
+.danger-zone { border-color: #f4cbd0; background: #fffafa; } /* something that can't be undone */
 
 .card-title { font-weight: 800; letter-spacing: -0.45px; font-size: 16px; margin: 0; }
 

@@ -7,7 +7,7 @@ from ..core.security import family_child_or_404, roles_required
 from ..core.validation import Payload, query_int
 from ..extensions import db
 from ..models import ROLE_CHILD, ROLE_PARENT, TX_ADJUSTMENT, PointTransaction
-from ..services import badges
+from ..services import audit, badges
 from ..services import points as ledger
 
 ns = Namespace("points", description="Kids' points: balances, history, and changes by hand")
@@ -90,6 +90,7 @@ class Adjustments(Resource):
             db.session.rollback()
             abort(409, f"{child.display_name} only has {child.points_balance} points. "
                        "A balance can't go below zero.", error="insufficient_points")
+        audit.record("points.adjusted", actor=current_user, target_type="user", target_id=child.id, amount=amount)
         db.session.commit()
         badges.evaluate(child)  # e.g. "Saved up 100"
         return {"transaction": entry.to_dict(), "balance": child.points_balance}, 201

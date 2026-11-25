@@ -11,7 +11,7 @@ from ..models import (
     REDEMPTION_CANCELLED, REDEMPTION_FULFILLED, REDEMPTION_PENDING, REDEMPTION_STATUSES, ROLE_CHILD, ROLE_PARENT,
     TX_REDEMPTION, TX_REFUND, Redemption, Reward, utcnow,
 )
-from ..services import badges, goals
+from ..services import audit, badges, goals
 from ..services import points as ledger
 
 ns = Namespace("rewards", description="The family's reward shop, and kids spending their points")
@@ -198,6 +198,8 @@ class Fulfill(Resource):
         if not transition(Redemption, redemption.id, REDEMPTION_PENDING, status=REDEMPTION_FULFILLED,
                           resolved_at=utcnow(), resolved_by_id=current_user.id):
             abort(409, "This has already been handed over or cancelled.")
+        audit.record("reward.given", actor=current_user, target_type="redemption", target_id=redemption.id,
+                     child_id=redemption.child_id)
         db.session.commit()
         db.session.refresh(redemption)
         return {"redemption": redemption.to_dict()}
@@ -225,6 +227,8 @@ class Cancel(Resource):
             .values(stock=Reward.stock + 1),
             execution_options={"synchronize_session": False},
         )
+        audit.record("reward.cancelled", actor=current_user, target_type="redemption", target_id=redemption.id,
+                     child_id=redemption.child_id, refunded=redemption.cost)
         db.session.commit()
         db.session.refresh(redemption)
         return {"redemption": redemption.to_dict(), "balance": child.points_balance}

@@ -9,6 +9,8 @@ export const familyApi = {
   createChild: (payload) => unwrap(api.post('/family/children', payload)),
   updateChild: (id, payload) => unwrap(api.patch(`/family/children/${id}`, payload)),
   removeChild: (id, password) => unwrap(api.delete(`/family/children/${id}`, { data: { password } })),
+  /** Delete the whole family and every account in it, for good. Needs the parent's password. */
+  deleteFamily: (password) => unwrap(api.delete('/family', { data: { password } })),
 
   /**
    * Download the family's data as a JSON file, saved by the browser. params: { child_id?, days? }.

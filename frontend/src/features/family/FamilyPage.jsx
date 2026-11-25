@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { familyApi } from '../../api/family'
 import { useAuth } from '../../auth/useAuth'
 import { Avatar } from '../../components/ui/Avatar'
 import Icon from '../../components/ui/Icon'
+import PasswordConfirmModal from '../../components/ui/PasswordConfirmModal'
 import { PointsPill } from '../../components/ui/Pills'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { useToast } from '../../components/ui/toast/useToast'
@@ -18,12 +19,14 @@ import { TimezoneCard } from './TimezoneCard'
 
 /** The family's people. Parents add kids here, and open a kid to edit them or see their points. */
 export default function FamilyPage() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, logout } = useAuth()
   const toast = useToast()
   const isParent = user.role === 'parent'
   const family = useApi((signal) => familyApi.get(signal), [])
   const [adding, setAdding] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [deletingFamily, setDeletingFamily] = useState(false)
+  const navigate = useNavigate()
 
   if (family.loading && !family.data) return <LoadingState rows={3} label="Loading family" />
   if (family.error) return <ErrorState error={family.error} onRetry={family.reload} />
@@ -148,7 +151,35 @@ export default function FamilyPage() {
           </section>
         </div>
       )}
+      {isParent && (
+        <div className="widget-grid">
+          <section className="card pad widget span-12 danger-zone" aria-labelledby="delete-family-title">
+            <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+              <div>
+                <h2 id="delete-family-title" className="section-title">Delete this family</h2>
+                <p className="section-sub">
+                  Deletes every account in {info.name} with all tasks, points, rewards, badges and photos. Can't be undone.
+                </p>
+              </div>
+              <button type="button" className="btn danger" onClick={() => setDeletingFamily(true)}>Delete family…</button>
+            </div>
+          </section>
+        </div>
+      )}
       {isParent && <ExportModal open={exporting} kids={kids} onClose={() => setExporting(false)} />}
+      <PasswordConfirmModal open={deletingFamily} title={`Delete ${info.name} for good?`}
+        confirmLabel="Delete everything" onClose={() => setDeletingFamily(false)}
+        onConfirm={async (password) => {
+          await familyApi.deleteFamily(password)
+          toast.success('Your family and all its data have been deleted.')
+          await logout().catch(() => {}) // the session is already gone; this clears it here too
+          navigate('/', { replace: true })
+        }}>
+        {members.length === 1 ? 'Your account' : `All ${members.length} accounts`} in {info.name} and everything
+        {members.length === 1 ? ' in it' : ' they made'} will be deleted
+        {parents.length > 1 ? ', including the other parents’ accounts' : ''}. This can't be undone. Want a copy
+        first? Cancel and use Export.
+      </PasswordConfirmModal>
 
       <ChildFormModal
         open={adding}

@@ -16,7 +16,7 @@ from ..models import (
     TASK_APPROVED, TASK_ARCHIVED, TASK_EXPIRED, TASK_OPEN, TASK_STATUSES, TASK_SUBMITTED, TX_TASK_REWARD, Task,
     TaskSubmission, utcnow,
 )
-from ..services import badges, categories, photos
+from ..services import audit, badges, categories, photos
 from ..services import points as ledger
 from ..services.routines import ensure_for_user
 
@@ -266,6 +266,8 @@ class ApproveSubmission(Resource):
         task.status = TASK_APPROVED
         ledger.credit(submission.child, task.points, TX_TASK_REWARD, f"Completed: {task.title}",
                       created_by=current_user, submission_id=submission.id)
+        audit.record("task.approved", actor=current_user, target_type="task", target_id=task.id,
+                     child_id=submission.child_id, points=task.points)
         db.session.commit()
         new_badges = badges.evaluate(submission.child)  # e.g. "First task", or a streak
         db.session.refresh(submission)
@@ -286,6 +288,8 @@ class RejectSubmission(Resource):
                           review_note=review_note, reviewed_by_id=current_user.id, reviewed_at=utcnow()):
             abort(409, "This has already been checked.")
         submission.task.status = TASK_OPEN
+        audit.record("task.sent_back", actor=current_user, target_type="task", target_id=submission.task_id,
+                     child_id=submission.child_id)
         db.session.commit()
         db.session.refresh(submission)
         return {"submission": submission.to_dict()}
