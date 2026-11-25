@@ -31,6 +31,10 @@
 .amount-pos { color: #216949; }
 .amount-neg { color: #725a82; } /* lilac, never red: taking points away isn't a telling-off */
 
+/* A line of extra numbers under the stat cards. */
+.stats-note { margin: 12px 0 var(--gap); }
+.grid-stats + .stats-note + .widget-grid { margin-top: 0; }
+
 /* Buttons for one kid under their name. */
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--gap); }
 
