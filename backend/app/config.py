@@ -48,6 +48,11 @@ def build_config(env_name):
         # Where task photos are kept. Empty means backend/instance/uploads.
         "UPLOAD_FOLDER": os.environ.get("UPLOAD_FOLDER"),
         "ENABLE_API_DOCS": True,
+        # Limits on wrong passwords (see app/core/limits.py). Only switch off for local experiments.
+        "RATE_LIMIT_ENABLED": _bool("RATE_LIMIT_ENABLED", True),
+        # How many reverse proxies (Caddy, nginx…) sit in front of the API; 0 = none. With one,
+        # the sign-in limits see each visitor's real address instead of the proxy's.
+        "TRUSTED_PROXIES": _int("TRUSTED_PROXIES", 0),
         "RESTX_MASK_SWAGGER": False,
         "RESTX_ERROR_404_HELP": False,
     }

@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -16,6 +16,7 @@ from jwt.exceptions import PyJWTError
 from sqlalchemy import func, or_, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..core import limits
 from ..core.security import roles_required
 from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
@@ -83,11 +84,15 @@ class Register(Resource):
 @ns.route("/login")
 class Login(Resource):
     def post(self):
-        """Sign in with an email (parents, admins) or a username (kids)."""
+        """Sign in with an email (parents, admins) or a username (kids). After too many wrong
+        passwords (per account, or from one address) it says to wait a while: 429."""
         p = Payload()
         identifier = p.string("identifier", max_len=255, lower=True)
         password = p.password("password", min_len=1)
         p.validate()
+        address = request.remote_addr or "unknown"
+        limits.check("login_ip", address)
+        limits.check("login", identifier)
 
         user = db.session.scalar(
             select(User).where(or_(func.lower(User.email) == identifier, User.username == identifier))
@@ -95,7 +100,10 @@ class Login(Resource):
         if user is None:
             check_password_hash(_DUMMY_HASH, password)
         if user is None or not user.check_password(password):
+            limits.failed("login", identifier)
+            limits.failed("login_ip", address)
             abort(401, "Incorrect email/username or password.", error="invalid_credentials")
+        limits.succeeded("login", identifier)
         if not user.is_active:
             abort(403, "This account has been switched off. Ask whoever manages it.", error="account_inactive")
 

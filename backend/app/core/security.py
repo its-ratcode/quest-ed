@@ -11,6 +11,7 @@ from sqlalchemy import select, update
 
 from ..extensions import db, jwt
 from ..models import ROLE_CHILD, TokenBlocklist, User
+from . import limits
 
 
 @jwt.user_identity_loader
@@ -97,6 +98,9 @@ def transition(model, obj_id, from_status, **values):
 
 def confirm_password(user, password, field="password"):
     """Check a parent's password before something that can't be undone.
-    Wrong: 400 with a message on the field."""
+    Wrong: 400 with a message on the field. Too many wrong ones: 429 (see core.limits)."""
+    limits.check("password", user.id)
     if not password or not user.check_password(password):
+        limits.failed("password", user.id)
         abort(400, "Please check the highlighted fields.", errors={field: "That password isn't right."})
+    limits.succeeded("password", user.id)

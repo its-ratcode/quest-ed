@@ -4,6 +4,7 @@ import pure_sqlalchemy  # noqa: F401  see backend/pure_sqlalchemy.py
 import pytest
 
 from app import create_app
+from app.core import limits
 from app.extensions import db
 
 API = "/api/v1"
@@ -44,6 +45,7 @@ class ApiClient:
 
 @pytest.fixture
 def app():
+    limits.reset()  # every test starts with no wrong passwords counted
     application = create_app("testing")
     yield application
     with application.app_context():
