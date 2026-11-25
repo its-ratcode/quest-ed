@@ -20,6 +20,7 @@ import PointsHistory from '../points/PointsHistory'
 import SubmissionPhoto from '../tasks/SubmissionPhoto'
 import { describeWeekdays } from '../tasks/weekdays'
 import ChildFormModal from './ChildFormModal'
+import ExportModal from './ExportModal'
 import GiveKidBadgeModal from './GiveKidBadgeModal'
 
 const shortDate = (value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -30,7 +31,7 @@ export default function KidProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const cats = useCategories()
-  const [modal, setModal] = useState(null) // 'edit' | 'points' | 'badge' | 'remove'
+  const [modal, setModal] = useState(null) // 'edit' | 'points' | 'badge' | 'export' | 'remove'
   const [changes, setChanges] = useState(0) // bumps after a change, to reload what shows it
 
   const family = useApi((signal) => familyApi.get(signal), [id])
@@ -91,6 +92,9 @@ export default function KidProfilePage() {
         </button>
         <button type="button" className="btn secondary small" onClick={() => setModal('badge')}>
           <Icon name="medal" size={14} /> Give a badge
+        </button>
+        <button type="button" className="btn secondary small" onClick={() => setModal('export')}>
+          <Icon name="log" size={14} /> Export
         </button>
       </div>
 
@@ -209,6 +213,7 @@ export default function KidProfilePage() {
           changed()
         }} />
       <GiveKidBadgeModal open={modal === 'badge'} kid={kid} badges={toGive} onClose={close} onGiven={changed} />
+      <ExportModal open={modal === 'export'} child={kid} onClose={close} />
       <ChildFormModal open={modal === 'edit'} child={kid} onClose={close}
         onSaved={(saved, _edited, newPassword) => {
           toast.success(`${saved.display_name} is updated${newPassword ? ', with the new password' : ''}.`)
@@ -223,7 +228,7 @@ export default function KidProfilePage() {
           navigate('/dashboard/family', { replace: true })
         }}>
         This deletes {kid.display_name}'s account and everything about them: tasks, points, rewards, badges and photos.
-        It can't be undone.
+        It can't be undone. Want a copy first? Cancel and use Export.
       </PasswordConfirmModal>
     </>
   )

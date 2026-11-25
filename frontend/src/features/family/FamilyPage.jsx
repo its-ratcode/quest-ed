@@ -11,6 +11,7 @@ import { useApi } from '../../hooks/useApi'
 import { getErrorMessage } from '../../utils/errors'
 import { initialsOf } from '../../utils/names'
 import ChildFormModal from './ChildFormModal'
+import ExportModal from './ExportModal'
 import { FamilyName } from './FamilyName'
 import { InviteBox } from './InviteBox'
 import { TimezoneCard } from './TimezoneCard'
@@ -22,6 +23,7 @@ export default function FamilyPage() {
   const isParent = user.role === 'parent'
   const family = useApi((signal) => familyApi.get(signal), [])
   const [adding, setAdding] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   if (family.loading && !family.data) return <LoadingState rows={3} label="Loading family" />
   if (family.error) return <ErrorState error={family.error} onRetry={family.reload} />
@@ -124,13 +126,29 @@ export default function FamilyPage() {
         </section>
       </div>
 
-      {/* Family settings. More panels join this row in later steps. */}
+      {/* Family settings. */}
       {isParent && (
         <div className="widget-grid thirds">
           <TimezoneCard timezone={info.timezone}
             onChange={(tz) => saveSetting(() => familyApi.setTimezone(tz), `Time zone set to ${tz}.`).catch(() => {})} />
+          <section className="card pad widget span-4" aria-labelledby="export-title">
+            <div className="section-top">
+              <div>
+                <h2 id="export-title" className="section-title">Export your data</h2>
+                <p className="section-sub">A file to keep</p>
+              </div>
+            </div>
+            <p className="small-text text-2 widget-body">
+              Tasks, routines, points, rewards and badges, for the family or one kid. No emails, usernames or passwords.
+            </p>
+            <div className="widget-foot">
+              <button type="button" className="btn secondary small" onClick={() => setExporting(true)}
+                disabled={kids.length === 0}>Export…</button>
+            </div>
+          </section>
         </div>
       )}
+      {isParent && <ExportModal open={exporting} kids={kids} onClose={() => setExporting(false)} />}
 
       <ChildFormModal
         open={adding}

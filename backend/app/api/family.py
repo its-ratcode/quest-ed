@@ -1,15 +1,20 @@
+import json
+import re
+
+from flask import Response
 from flask_jwt_extended import current_user, jwt_required
 from flask_restx import Namespace, Resource, abort
 from sqlalchemy import select
 
 from ..core.security import confirm_password, family_child_or_404, roles_required
 from ..core.timezones import is_valid_timezone
-from ..core.validation import Payload
+from ..core.validation import Payload, query_int
 from ..extensions import db
 from ..models import ROLE_CHILD, ROLE_PARENT, Family, User, generate_invite_code
 from ..services import photos
 from ..services.erase import erase_child
-from ..services.routines import ensure_family_day
+from ..services.export import build_export
+from ..services.routines import ensure_family_day, family_today
 
 ns = Namespace("family", description="Your family, and your kids' accounts")
 
@@ -132,3 +137,27 @@ class ChildResource(Resource):
         db.session.commit()
         photos.delete_files(photo_names)  # only once the database change has really happened
         return {"message": "Removed."}
+
+
+@ns.route("/export")
+class Export(Resource):
+    @roles_required(ROLE_PARENT)
+    def get(self):
+        """Download the family's data as a JSON file to keep. ?child_id= for one kid, ?days= for
+        a recent period (leave it out for everything). No emails, usernames, passwords or invite
+        codes are in it."""
+        days = query_int("days", min_value=1, max_value=3650)
+        child_id = query_int("child_id")
+        child = family_child_or_404(child_id) if child_id is not None else None
+        family = current_user.family
+
+        data = build_export(family, child=child, days=days)
+        who = _slug(child.display_name if child else family.name)
+        filename = f"quest-ed-{who}-{family_today(family).isoformat()}.json"
+        return Response(json.dumps(data, ensure_ascii=False, indent=2), content_type="application/json; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "no-store"})
+
+
+def _slug(text):
+    """A name as it can go in a file name: "The Testers!" -> "the-testers"."""
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "family"
