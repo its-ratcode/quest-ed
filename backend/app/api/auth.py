@@ -25,6 +25,7 @@ from ..models import ROLE_ADMIN, ROLE_PARENT, Family, TokenBlocklist, User, utcn
 from ..services import audit
 from ..services.badges import add_starter_badges
 from ..services.categories import add_starter_categories
+from ..services.site import feature_enabled, needs_setup
 
 ns = Namespace("auth", description="Sign-up, sign-in and sessions")
 
@@ -42,10 +43,41 @@ def _session_response(user, status=200):
     return response
 
 
+@ns.route("/setup")
+class Setup(Resource):
+    def post(self):
+        """On a brand-new site only: create the administrator and sign in. Once there is one,
+        this always answers 409, so it can never make a second."""
+        if not needs_setup():
+            abort(409, "This site is already set up. Please sign in.", error="already_set_up")
+        p = Payload()
+        display_name = p.string("display_name", max_len=60)
+        email = p.email("email")
+        password = p.password("password", min_len=12)
+        p.validate()
+        if db.session.scalar(select(User.id).where(User.email == email)):
+            p.add_error("email", "An account with this email already exists.")
+            p.validate()
+
+        admin = User(role=ROLE_ADMIN, email=email, display_name=display_name, avatar="🛡️", last_login_at=utcnow())
+        admin.set_password(password)
+        db.session.add(admin)
+        db.session.flush()
+        if db.session.scalar(select(func.count(User.id)).where(User.role == ROLE_ADMIN)) > 1:
+            db.session.rollback()  # two people went through setup at the same moment; the first one wins
+            abort(409, "This site is already set up. Please sign in.", error="already_set_up")
+        audit.record("site.setup", actor=admin, target_type="user", target_id=admin.id)
+        db.session.commit()
+        return _session_response(admin, status=201)
+
+
 @ns.route("/register")
 class Register(Resource):
     def post(self):
-        """Create a parent account and sign in: with a new family, or joining one with its invite code."""
+        """Create a parent account and sign in: with a new family, or joining one with its invite code.
+        403 while the administrator has new sign-ups switched off."""
+        if not feature_enabled("registration"):
+            abort(403, "New sign-ups are closed right now.", error="registration_closed")
         p = Payload()
         display_name = p.string("display_name", max_len=60)
         email = p.email("email")

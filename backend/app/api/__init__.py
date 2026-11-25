@@ -45,6 +45,7 @@ def create_api_blueprint(enable_docs=True):
         """Only photos are big enough to hit the size limit (MAX_CONTENT_LENGTH)."""
         return {"message": TOO_BIG, "errors": {"photo": TOO_BIG}}, 413
 
+    from .admin import ns as admin_ns
     from .auth import ns as auth_ns
     from .badges import ns as badges_ns
     from .categories import ns as categories_ns
@@ -54,9 +55,11 @@ def create_api_blueprint(enable_docs=True):
     from .points import ns as points_ns
     from .rewards import ns as rewards_ns
     from .routines import ns as routines_ns
+    from .site import ns as site_ns
     from .tasks import ns as tasks_ns
 
     api.add_namespace(health_ns, path="/health")
+    api.add_namespace(site_ns, path="/site")
     api.add_namespace(auth_ns, path="/auth")
     api.add_namespace(family_ns, path="/family")
     api.add_namespace(categories_ns, path="/categories")
@@ -66,4 +69,5 @@ def create_api_blueprint(enable_docs=True):
     api.add_namespace(dashboard_ns, path="/dashboard")
     api.add_namespace(points_ns, path="/points")
     api.add_namespace(rewards_ns, path="/rewards")
+    api.add_namespace(admin_ns, path="/admin")
     return blueprint
