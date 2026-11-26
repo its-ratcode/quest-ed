@@ -5,6 +5,8 @@ export const authApi = {
   me: (signal) => unwrap(api.get('/auth/me', { signal })),
   login: (identifier, password) => unwrap(api.post('/auth/login', { identifier, password })),
   register: (payload) => unwrap(api.post('/auth/register', payload)),
+  /** First run only: create the site's administrator. */
+  setup: (payload) => unwrap(api.post('/auth/setup', payload)),
   logout: () => unwrap(api.post('/auth/logout')),
   updateMe: (payload) => unwrap(api.patch('/auth/me', payload)),
   changePassword: (payload) => unwrap(api.post('/auth/change-password', payload)),

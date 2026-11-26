@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { useSiteConfig } from '../../auth/useSiteConfig'
 import { Field } from '../../components/ui/Field'
 import { fieldProps } from '../../components/ui/fieldProps'
 import { safeReturnPath } from '../../routes/safeReturnPath'
@@ -9,6 +10,7 @@ import { AuthBrand } from './AuthBrand'
 
 export default function LoginPage() {
   const { login, notice } = useAuth()
+  const { features } = useSiteConfig()
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ identifier: '', password: '' })
@@ -67,9 +69,11 @@ export default function LoginPage() {
           Forgot your password? Kids, ask a parent to set a new one. Parents, contact the site administrator.
         </p>
       </div>
-      <p className="small-text mt-3">
-        No account yet? <Link to="/register">Create one for your family</Link>
-      </p>
+      {features.registration && (
+        <p className="small-text mt-3">
+          No account yet? <Link to="/register">Create one for your family</Link>
+        </p>
+      )}
     </main>
   )
 }

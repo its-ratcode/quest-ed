@@ -15,6 +15,7 @@
   padding: 0 13px;
   font-size: 14px;
 }
+.form-select { padding-right: 36px; } /* room for the arrow, so it never sits on the text */
 textarea.form-control { padding: 12px 13px; min-height: 90px; }
 .form-control:focus,
 .form-select:focus {

@@ -1,6 +1,7 @@
 import { dashboardApi } from '../api/dashboard'
 import { useAuth } from '../auth/useAuth'
 import { ErrorState, LoadingState } from '../components/ui/States'
+import AdminOverview from '../features/admin/AdminOverview'
 import KidToday from '../features/dashboard/KidToday'
 import ParentOverview from '../features/dashboard/ParentOverview'
 import { useApi } from '../hooks/useApi'
@@ -14,8 +15,9 @@ function KidHome() {
   return <KidToday data={summary.data} reload={summary.reload} />
 }
 
-/** The first page after signing in: kids get Today, parents their Overview. */
+/** The first page after signing in: kids get Today, parents their Overview, the admin the site's totals. */
 export default function DashboardPage() {
   const { user } = useAuth()
+  if (user.role === 'admin') return <AdminOverview />
   return user.role === 'child' ? <KidHome /> : <ParentOverview />
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useSiteConfig } from '../auth/useSiteConfig'
 import { FullPageSpinner } from '../components/ui/FullPageSpinner'
 import { safeReturnPath } from './safeReturnPath'
 
@@ -20,6 +21,20 @@ export function RequireRole({ roles }) {
   const { user } = useAuth()
   if (!roles.includes(user?.role)) return <Navigate to="/dashboard" replace />
   return <Outlet />
+}
+
+/**
+ * A brand-new site has no administrator yet: every page goes to /setup until one is
+ * created. Once it's set up, /setup sends people to sign in instead.
+ */
+export function SetupGate({ children }) {
+  const { needsSetup, loaded } = useSiteConfig()
+  const location = useLocation()
+  if (!loaded) return <FullPageSpinner label="Starting up" />
+  const onSetup = location.pathname === '/setup'
+  if (needsSetup && !onSetup) return <Navigate to="/setup" replace />
+  if (!needsSetup && onSetup) return <Navigate to="/login" replace />
+  return children
 }
 
 /**

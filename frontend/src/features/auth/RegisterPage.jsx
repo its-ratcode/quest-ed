@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { useSiteConfig } from '../../auth/useSiteConfig'
 import { Field } from '../../components/ui/Field'
 import { fieldProps } from '../../components/ui/fieldProps'
 import { getErrorMessage, getFieldErrors } from '../../utils/errors'
@@ -11,6 +12,7 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 export default function RegisterPage() {
   const { register } = useAuth()
+  const { features } = useSiteConfig()
   const navigate = useNavigate()
   const [mode, setMode] = useState('create') // 'create' a new family, or 'join' one with a code
   const [form, setForm] = useState({ display_name: '', email: '', password: '', family_name: '', invite_code: '' })
@@ -56,6 +58,23 @@ export default function RegisterPage() {
       setFormError(getErrorMessage(error, 'Sign-up failed. Please try again.'))
       setBusy(false)
     }
+  }
+
+  if (!features.registration) {
+    return (
+      <main className="auth-wrap">
+        <AuthBrand />
+        <div className="auth-card card-soft">
+          <h1>Sign-ups are closed</h1>
+          <p className="text-2 small-text mt-1">
+            New parent accounts can't be created on this site right now. Please try again later.
+          </p>
+        </div>
+        <p className="small-text mt-3">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+      </main>
+    )
   }
 
   return (
