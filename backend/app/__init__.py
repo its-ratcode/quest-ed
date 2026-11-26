@@ -34,6 +34,10 @@ def create_app(config_name=None, overrides=None):
 
     app.register_blueprint(create_api_blueprint(app.config["ENABLE_API_DOCS"]))
 
+    from .cli import register_cli
+
+    register_cli(app)
+
     @app.after_request
     def security_headers(response):
         """The API only sends JSON and photos, so it's locked down hard: nothing it returns may

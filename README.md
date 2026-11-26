@@ -26,6 +26,15 @@ flask --app run db migrate -m "what changed"   # after changing a model: write a
 flask --app run db check                       # are the models and migrations in sync?
 ```
 
+To try the app with something in it, add the sample Rivera family (two parents, three kids, two
+weeks of tasks, points, rewards and badges) and a sample admin. Their sign-ins are at the top of
+`backend/app/services/sample_data.py`. Other families are never touched, and it refuses to run in production.
+
+```bash
+flask --app run seed-demo           # add the sample family
+flask --app run seed-demo --reset   # delete it and build it again
+```
+
 On Windows machines whose Application Control blocks SQLAlchemy's compiled files,
 `backend/pure_sqlalchemy.py` makes SQLAlchemy use its plain-Python copies instead
 (set `QUESTED_USE_COMPILED_SQLALCHEMY=1` to turn that off).
