@@ -11,6 +11,7 @@ import { Avatar } from '../ui/Avatar'
 import Icon from '../ui/Icon'
 import { mobileItemsFor, NAV_HEADING, navItemsFor, ROLE_LABEL } from './navigation'
 import NoticeBanner from './NoticeBanner'
+import ViewingAsBanner from './ViewingAsBanner'
 import { SignOutButton } from './SignOutButton'
 
 /** The small dark count beside a menu entry, e.g. how many "I did it"s are waiting. */
@@ -102,6 +103,7 @@ export default function DashboardLayout() {
         </header>
 
         <main id="main" className="main-inner" tabIndex={-1}>
+          <ViewingAsBanner />
           <NoticeBanner key={user.id} />
           {/* Keyed by account, so nothing loaded for one account is shown to the next. */}
           <CategoriesProvider key={user.id} enabled={user.role !== 'admin'}>

@@ -24,6 +24,8 @@ const FILTERS = [
 const ACTION_TEXT = {
   'site.setup': 'Set up the site',
   'auth.login': 'Signed in',
+  'auth.view_as_child': "Opened a kid's account",
+  'auth.switch_back': 'Switched back to the parent',
   'account.registered': 'Created a parent account',
   'child.created': 'Added a kid account',
   'child.password_reset': "Reset a kid's password",

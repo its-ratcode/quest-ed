@@ -7,16 +7,18 @@ import { badgesApi } from '../api/badges'
 import { categoriesApi } from '../api/categories'
 import { familyApi } from '../api/family'
 import { pointsApi } from '../api/points'
+import { reportApi } from '../api/report'
 import { tasksApi } from '../api/tasks'
 import { AppRoutes } from '../App'
 import { AuthProvider } from '../auth/AuthProvider'
 import { ToastProvider } from '../components/ui/toast/ToastProvider'
 
-vi.mock('../api/auth', () => ({ authApi: { me: vi.fn(), logout: vi.fn() } }))
+vi.mock('../api/auth', () => ({ authApi: { me: vi.fn(), logout: vi.fn(), viewAs: vi.fn() } }))
 vi.mock('../api/categories', () => ({ categoriesApi: { list: vi.fn() } }))
 vi.mock('../api/family', () => ({ familyApi: { get: vi.fn(), removeChild: vi.fn() } }))
 vi.mock('../api/points', () => ({ pointsApi: { summary: vi.fn(), transactions: vi.fn(), adjust: vi.fn() } }))
 vi.mock('../api/badges', () => ({ badgesApi: { progress: vi.fn(), award: vi.fn() } }))
+vi.mock('../api/report', () => ({ reportApi: { get: vi.fn() } }))
 vi.mock('../api/tasks', () => ({
   tasksApi: { list: vi.fn(), submissions: vi.fn(), photoUrl: (id) => `/api/v1/tasks/submissions/${id}/photo` },
 }))
@@ -47,6 +49,10 @@ function open(progress = PROGRESS) {
   categoriesApi.list.mockResolvedValue({ items: CATS })
   familyApi.get.mockResolvedValue({ family: { id: 1, name: 'The Testers' }, members: [PAT, MIA] })
   pointsApi.summary.mockResolvedValue({ balance: 32, earned_total: 40, spent_total: 8 })
+  reportApi.get.mockResolvedValue({
+    days: 30, approved: 9, sent_back: 2, routines_done: 8, routines_missed: 2, routine_rate: 0.8,
+    points_earned: 40, points_spent: 8, focus_minutes: 25,
+  })
   pointsApi.transactions.mockResolvedValue({ items: [], total: 0, page: 1, per_page: 8 })
   badgesApi.progress.mockResolvedValue(progress)
   tasksApi.list.mockResolvedValue({ items: [
@@ -77,10 +83,13 @@ describe("a kid's page (parents)", () => {
   it('shows their numbers, what they have to do, their badges and what was reviewed', async () => {
     open()
     expect(await screen.findByRole('heading', { level: 1, name: 'Mia' })).toBeInTheDocument()
-    expect(await screen.findByText('12')).toBeInTheDocument() // tasks approved
+    expect(await screen.findByText('9')).toBeInTheDocument() // tasks approved in the last 30 days
+    expect(screen.getByText('Tasks approved (30 days)')).toBeInTheDocument()
     expect(screen.getByText('3 days')).toBeInTheDocument()
     expect(screen.getByText('1 / 3')).toBeInTheDocument()
-    expect(await screen.findByText(/40 points earned, 8 spent or taken away · best streak 5 days/)).toBeInTheDocument()
+    expect(await screen.findByText('Last 30 days: 2 sent back · 80% of routine tasks done · 40 points earned, '
+      + '8 spent or taken away · 25 min of focus · best streak ever 5 days')).toBeInTheDocument()
+    expect(reportApi.get).toHaveBeenCalledWith(2, expect.anything())
 
     const todo = within(screen.getByRole('region', { name: 'To do' }))
     expect(await todo.findByText('1 open · 1 waiting for you')).toBeInTheDocument()
@@ -128,5 +137,20 @@ describe("a kid's page (parents)", () => {
     const dialog = screen.getByRole('dialog', { name: 'Give Mia a badge' })
     expect(within(dialog).getByText(/No hand-out badges left for Mia/)).toBeInTheDocument()
     expect(within(dialog).getByRole('link', { name: 'Badges' })).toHaveAttribute('href', '/dashboard/badges')
+  })
+
+  it("opens the kid's account after saying what that means, then shows whose account it is", async () => {
+    const user = userEvent.setup()
+    open()
+    await user.click(await screen.findByRole('button', { name: "Open Mia's account" }))
+    const dialog = screen.getByRole('dialog', { name: "Open Mia's account?" })
+    expect(within(dialog).getByText(/you'll need your password/)).toBeInTheDocument()
+
+    authApi.viewAs.mockResolvedValue({ user: MIA })
+    authApi.me.mockResolvedValue({ user: MIA, family: { id: 1, name: 'The Testers' }, acting_parent: PAT })
+    await user.click(within(dialog).getByRole('button', { name: "Open Mia's account" }))
+    expect(authApi.viewAs).toHaveBeenCalledWith(2)
+    expect(await screen.findByText("You're now using Mia's account.")).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back to Pat' })).toBeInTheDocument()
   })
 })

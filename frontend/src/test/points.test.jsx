@@ -78,7 +78,6 @@ describe("a kid's page (parents)", () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Mia' })).toBeInTheDocument()
     expect(screen.getByText('Points to spend')).toBeInTheDocument()
     expect(await screen.findByText('Counted twice')).toBeInTheDocument()
-    expect(pointsApi.summary).toHaveBeenCalledWith({ child_id: 2 }, expect.anything())
     expect(pointsApi.transactions).toHaveBeenCalledWith({ child_id: 2, page: 1, per_page: 8 }, expect.anything())
   })
 

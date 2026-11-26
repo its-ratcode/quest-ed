@@ -8,7 +8,8 @@ import { AuthContext } from './authContext'
  * the browser. status: 'loading' | 'authenticated' | 'anonymous'
  */
 export function AuthProvider({ children }) {
-  const [state, setState] = useState({ status: 'loading', user: null, family: null, notice: null })
+  // actingParent: set while a parent is using one of their kids' accounts.
+  const [state, setState] = useState({ status: 'loading', user: null, family: null, actingParent: null, notice: null })
   const statusRef = useRef('loading')
 
   useEffect(() => {
@@ -16,12 +17,14 @@ export function AuthProvider({ children }) {
   }, [state.status])
 
   const applyMe = useCallback((me) => {
-    setState({ status: 'authenticated', user: me.user, family: me.family, notice: null })
+    setState({
+      status: 'authenticated', user: me.user, family: me.family, actingParent: me.acting_parent || null, notice: null,
+    })
     return me
   }, [])
 
   const clearSession = useCallback((notice = null) => {
-    setState({ status: 'anonymous', user: null, family: null, notice })
+    setState({ status: 'anonymous', user: null, family: null, actingParent: null, notice })
   }, [])
 
   useEffect(() => {
@@ -61,9 +64,21 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(async () => applyMe(await authApi.me()), [applyMe])
 
+  /** A parent opens one of their kids' accounts in this browser. */
+  const viewAsChild = useCallback(async (childId) => {
+    await authApi.viewAs(childId)
+    return applyMe(await authApi.me())
+  }, [applyMe])
+
+  /** Back from the kid's account to the parent; needs the parent's password. */
+  const switchBack = useCallback(async (password) => {
+    await authApi.switchBack(password)
+    return applyMe(await authApi.me())
+  }, [applyMe])
+
   const value = useMemo(
-    () => ({ ...state, login, register, logout, refreshUser }),
-    [state, login, register, logout, refreshUser],
+    () => ({ ...state, login, register, logout, refreshUser, viewAsChild, switchBack }),
+    [state, login, register, logout, refreshUser, viewAsChild, switchBack],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

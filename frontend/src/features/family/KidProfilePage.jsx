@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { badgesApi } from '../../api/badges'
 import { familyApi } from '../../api/family'
-import { pointsApi } from '../../api/points'
+import { reportApi } from '../../api/report'
 import { tasksApi } from '../../api/tasks'
+import { useAuth } from '../../auth/useAuth'
+import { useSiteConfig } from '../../auth/useSiteConfig'
 import { Avatar } from '../../components/ui/Avatar'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
 import { CategoryTile } from '../../components/ui/LookPicker'
 import PasswordConfirmModal from '../../components/ui/PasswordConfirmModal'
@@ -31,11 +34,13 @@ export default function KidProfilePage() {
   const navigate = useNavigate()
   const toast = useToast()
   const cats = useCategories()
-  const [modal, setModal] = useState(null) // 'edit' | 'points' | 'badge' | 'export' | 'remove'
+  const { viewAsChild } = useAuth()
+  const { features } = useSiteConfig()
+  const [modal, setModal] = useState(null) // 'edit' | 'points' | 'badge' | 'export' | 'remove' | 'open-as'
   const [changes, setChanges] = useState(0) // bumps after a change, to reload what shows it
 
   const family = useApi((signal) => familyApi.get(signal), [id])
-  const summary = useApi((signal) => pointsApi.summary({ child_id: id }, signal), [id, changes])
+  const report = useApi((signal) => reportApi.get(id, signal), [id, changes])
   const badges = useApi((signal) => badgesApi.progress({ child_id: id }, signal), [id, changes])
   const todo = useApi((signal) => tasksApi.list({ child_id: id, status: 'active' }, signal), [id])
   const reviewedList = useApi((signal) => tasksApi.submissions({ child_id: id, status: 'all', limit: 12 }, signal), [id])
@@ -96,18 +101,26 @@ export default function KidProfilePage() {
         <button type="button" className="btn secondary small" onClick={() => setModal('export')}>
           <Icon name="log" size={14} /> Export
         </button>
+        {kid.is_active !== false && (
+          <button type="button" className="btn secondary small" onClick={() => setModal('open-as')}>
+            <Icon name="user" size={14} /> Open {kid.display_name}'s account
+          </button>
+        )}
       </div>
 
       <div className="grid-stats">
         <StatCard value={kid.points_balance} label="Points to spend" tone="mint" icon="coins" />
-        <StatCard value={stats ? stats.approved : '–'} label="Tasks approved" tone="sky" icon="check" />
+        <StatCard value={report.data ? report.data.approved : '–'} label="Tasks approved (30 days)" tone="sky" icon="check" />
         <StatCard value={badges.data ? `${badges.data.streak.current} days` : '–'} label="Streak" tone="butter" icon="sparkle" />
         <StatCard value={badges.data ? `${earned.length} / ${allBadges.length}` : '–'} label="Badges" tone="lilac" icon="medal" />
       </div>
-      {summary.data && stats && (
+      {report.data && stats && (
         <p className="small-text text-2 stats-note">
-          {formatNumber(summary.data.earned_total)} points earned, {formatNumber(summary.data.spent_total)} spent or
-          taken away · best streak {stats.best_streak} {stats.best_streak === 1 ? 'day' : 'days'}
+          Last 30 days: {report.data.sent_back} sent back
+          {report.data.routine_rate !== null ? ` · ${Math.round(report.data.routine_rate * 100)}% of routine tasks done` : ''}
+          {` · ${formatNumber(report.data.points_earned)} points earned, ${formatNumber(report.data.points_spent)} spent or taken away`}
+          {features.focus_mode && report.data.focus_minutes ? ` · ${report.data.focus_minutes} min of focus` : ''}
+          {` · best streak ever ${stats.best_streak} ${stats.best_streak === 1 ? 'day' : 'days'}`}
         </p>
       )}
 
@@ -220,6 +233,22 @@ export default function KidProfilePage() {
           family.reload()
         }}
         onRemove={() => setModal('remove')} />
+      {modal === 'open-as' && (
+        <ConfirmDialog
+          open
+          title={`Open ${kid.display_name}'s account?`}
+          message={`You'll use the app as ${kid.display_name}: anything you do is done as them. `
+            + 'To come back to your own account, you\'ll need your password.'}
+          confirmLabel={`Open ${kid.display_name}'s account`}
+          tone="primary"
+          onConfirm={async () => {
+            await viewAsChild(kid.id)
+            toast.success(`You're now using ${kid.display_name}'s account.`)
+            navigate('/dashboard', { replace: true })
+          }}
+          onClose={close}
+        />
+      )}
       <PasswordConfirmModal open={modal === 'remove'} title={`Remove ${kid.display_name}?`}
         confirmLabel="Remove for good" onClose={close}
         onConfirm={async (password) => {

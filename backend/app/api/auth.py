@@ -17,11 +17,11 @@ from sqlalchemy import func, or_, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..core import limits
-from ..core.security import roles_required
+from ..core.security import confirm_password, roles_required
 from ..core.timezones import is_valid_timezone
 from ..core.validation import Payload
 from ..extensions import db
-from ..models import ROLE_ADMIN, ROLE_PARENT, Family, TokenBlocklist, User, utcnow
+from ..models import ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, Family, TokenBlocklist, User, utcnow
 from ..services import audit
 from ..services.badges import add_starter_badges
 from ..services.categories import add_starter_categories
@@ -34,13 +34,36 @@ ns = Namespace("auth", description="Sign-up, sign-in and sessions")
 _DUMMY_HASH = generate_password_hash("not-a-real-password")
 
 
-def _session_response(user, status=200):
+# In a session where a parent opened one of their kids' accounts: which parent it was.
+ACTING_CLAIM = "acting_parent_id"
+
+
+def _session_response(user, status=200, claims=None):
     """The user's details, with fresh session cookies attached."""
     response = jsonify(user=user.to_dict(private=True))
     response.status_code = status
-    set_access_cookies(response, create_access_token(identity=user))
-    set_refresh_cookies(response, create_refresh_token(identity=user))
+    set_access_cookies(response, create_access_token(identity=user, additional_claims=claims))
+    set_refresh_cookies(response, create_refresh_token(identity=user, additional_claims=claims))
     return response
+
+
+def _acting_claims():
+    """Keeps an "opened by a parent" session that way when its cookie is renewed."""
+    parent_id = get_jwt().get(ACTING_CLAIM)
+    return {ACTING_CLAIM: parent_id} if parent_id else None
+
+
+def _acting_parent():
+    """The parent who opened this kid's account, if that's what this session is."""
+    parent_id = get_jwt().get(ACTING_CLAIM)
+    return db.session.get(User, parent_id) if parent_id else None
+
+
+def _end_this_session():
+    """The cookies are about to be replaced; the old session token stops working too."""
+    jti = get_jwt().get("jti")
+    if jti:
+        db.session.add(TokenBlocklist(jti=jti))
 
 
 @ns.route("/setup")
@@ -155,8 +178,48 @@ class Refresh(Resource):
     def post(self):
         """A new short-lived session cookie, from the long-lived refresh cookie."""
         response = jsonify(user=current_user.to_dict(private=True))
-        set_access_cookies(response, create_access_token(identity=current_user))
+        set_access_cookies(response, create_access_token(identity=current_user, additional_claims=_acting_claims()))
         return response
+
+
+@ns.route("/view-as/<int:child_id>")
+class ViewAsChild(Resource):
+    @roles_required(ROLE_PARENT)
+    def post(self, child_id):
+        """Open one of your kids' accounts in this browser, without their password: to see what they
+        see, or to tick something off for them. Switching back asks for your password, so a kid left
+        at the keyboard can't get into the parent account."""
+        child = db.session.get(User, child_id)
+        if (child is None or child.role != ROLE_CHILD or child.family_id != current_user.family_id
+                or not child.is_active):
+            abort(404, "Child not found.")
+        audit.record("auth.view_as_child", actor=current_user, target_type="user", target_id=child.id,
+                     family_id=child.family_id)
+        _end_this_session()
+        db.session.commit()
+        return _session_response(child, claims={ACTING_CLAIM: current_user.id})
+
+
+@ns.route("/switch-back")
+class SwitchBack(Resource):
+    @jwt_required()
+    def post(self):
+        """From a kid's account back to the parent who opened it. Needs that parent's password
+        (wrong guesses are limited, like every password check)."""
+        parent = _acting_parent()
+        if parent is None:
+            abort(409, "This isn't an account a parent opened.", error="not_acting")
+        p = Payload()
+        password = p.password("password", min_len=1)
+        p.validate()
+        if parent.role != ROLE_PARENT or not parent.is_active or parent.family_id != current_user.family_id:
+            abort(403, "That parent account can't be used here any more. Please sign in again.")
+        confirm_password(parent, password)
+        audit.record("auth.switch_back", actor=parent, target_type="user", target_id=current_user.id,
+                     family_id=parent.family_id)
+        _end_this_session()
+        db.session.commit()
+        return _session_response(parent)
 
 
 @ns.route("/logout")
@@ -178,9 +241,13 @@ class Logout(Resource):
 
 def _me_payload(user):
     family = user.family
+    parent = _acting_parent()
     return {
         "user": user.to_dict(private=True),
         "family": family.to_dict(include_invite=user.role == ROLE_PARENT) if family else None,
+        # Set while a parent is using this kid's account (the web app shows a banner to switch back).
+        "acting_parent": ({"id": parent.id, "display_name": parent.display_name, "avatar": parent.avatar}
+                          if parent is not None else None),
     }
 
 

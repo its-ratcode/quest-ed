@@ -4,3 +4,18 @@
 .alert-soft.info { background: #f2f6f2; color: #39483e; }
 .alert-soft.success { background: #e0faed; color: #1c6948; }
 .alert-soft.warn { background: #fff3ca; color: #6d5011; }
+
+/* While a parent uses one of their kids' accounts. */
+.viewing-as {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--butter-soft);
+  border: 1px solid #f1e3a8;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: #4f4316;
+}
