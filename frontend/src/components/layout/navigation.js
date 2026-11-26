@@ -19,6 +19,9 @@ const ALL_ITEMS = {
   admin: [
     { to: '/dashboard', label: 'Overview', icon: 'home', end: true },
     { to: '/dashboard/admin/users', label: 'Users', icon: 'users' },
+    { to: '/dashboard/admin/settings', label: 'Site settings', short: 'Settings', icon: 'settings' },
+    { to: '/dashboard/admin/notices', label: 'Notices', icon: 'bell' },
+    { to: '/dashboard/admin/audit', label: 'Audit log', short: 'Audit', icon: 'log' },
   ],
 }
 
@@ -35,7 +38,7 @@ export function navItemsFor(user) {
 const MOBILE_PRIMARY = {
   parent: ['/dashboard', '/dashboard/tasks', '/dashboard/rewards', '/dashboard/family'],
   child: ['/dashboard', '/dashboard/tasks', '/dashboard/rewards', '/dashboard/badges'],
-  admin: ['/dashboard', '/dashboard/admin/users'],
+  admin: ['/dashboard', '/dashboard/admin/users', '/dashboard/admin/settings', '/dashboard/admin/audit'],
 }
 
 export function mobileItemsFor(role, items) {

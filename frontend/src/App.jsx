@@ -3,6 +3,9 @@ import { AuthProvider } from './auth/AuthProvider'
 import { SiteConfigProvider } from './auth/SiteConfigProvider'
 import DashboardLayout from './components/layout/DashboardLayout'
 import { ToastProvider } from './components/ui/toast/ToastProvider'
+import AdminAuditPage from './features/admin/AdminAuditPage'
+import AdminNoticesPage from './features/admin/AdminNoticesPage'
+import AdminSettingsPage from './features/admin/AdminSettingsPage'
 import AdminUsersPage from './features/admin/AdminUsersPage'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
@@ -46,6 +49,9 @@ export function AppRoutes() {
           </Route>
           <Route element={<RequireRole roles={['admin']} />}>
             <Route path="admin/users" element={<AdminUsersPage />} />
+            <Route path="admin/settings" element={<AdminSettingsPage />} />
+            <Route path="admin/notices" element={<AdminNoticesPage />} />
+            <Route path="admin/audit" element={<AdminAuditPage />} />
           </Route>
         </Route>
       </Route>

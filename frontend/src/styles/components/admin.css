@@ -16,3 +16,58 @@
 .table-plain tr:last-child td { border-bottom: 0; }
 .table-plain .num { text-align: right; font-variant-numeric: tabular-nums; }
 .table-plain .row-off { color: var(--muted-2); } /* a switched-off account */
+
+/* Site settings: one row per switch. */
+.settings-card { max-width: 720px; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-row:first-child { padding-top: 0; }
+.settings-row:last-child { border-bottom: 0; padding-bottom: 0; }
+
+/* An on/off switch: <button role="switch" aria-checked> with class "on" when on. */
+.switch {
+  position: relative;
+  flex: none;
+  width: 54px;
+  min-width: 54px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 2px;
+  width: 49px;
+  height: 29px;
+  border-radius: 99px;
+  background: #e5eae6;
+  border: 1px solid #bbcabe;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 11px;
+  left: 6px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 5px #b5c5b8;
+  transition: left 0.15s;
+}
+.switch.on::before { background: #2e7756; border-color: #2e7756; }
+.switch.on::after { left: 26px; }
+.switch:disabled { opacity: 0.6; }
+@media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
+
+/* Notices: one row per notice, newest first. */
+.notice-row.is-off .notice-text { color: var(--muted-2); }

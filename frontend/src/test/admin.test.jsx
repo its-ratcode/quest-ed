@@ -16,7 +16,10 @@ vi.mock('../api/auth', () => ({
 }))
 vi.mock('../api/site', () => ({ siteApi: { config: vi.fn(), notices: vi.fn() } }))
 vi.mock('../api/admin', () => ({
-  adminApi: { stats: vi.fn(), users: vi.fn(), setUserActive: vi.fn(), setUserPassword: vi.fn() },
+  adminApi: {
+    stats: vi.fn(), users: vi.fn(), setUserActive: vi.fn(), setUserPassword: vi.fn(), settings: vi.fn(),
+    saveSettings: vi.fn(), auditLogs: vi.fn(), notices: vi.fn(), createNotice: vi.fn(), removeNotice: vi.fn(),
+  },
 }))
 
 const ALEX = { id: 9, role: 'admin', display_name: 'Alex', avatar: '🛡️', email: 'alex@example.test' }
@@ -68,6 +71,8 @@ const MIA = {
 beforeEach(() => {
   vi.resetAllMocks()
   vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'ok' }) })))
+  siteApi.notices.mockResolvedValue({ items: [] })
+  localStorage.clear()
 })
 
 describe('first-run setup', () => {
@@ -180,6 +185,89 @@ describe('the admin pages', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('Site settings: flipping a switch saves it straight away', async () => {
+    const user = userEvent.setup()
+    signedInAdmin()
+    adminApi.settings.mockResolvedValue({ features: { registration: true }, labels: { registration: 'New parent sign-ups' } })
+    renderApp('/dashboard/admin/settings')
+
+    const toggle = await screen.findByRole('switch', { name: 'New parent sign-ups' })
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(toggle).toHaveAccessibleDescription(/Existing families are not affected/)
+    adminApi.saveSettings.mockResolvedValue({ features: { registration: false }, labels: { registration: 'New parent sign-ups' } })
+    const configCalls = siteApi.config.mock.calls.length
+    await user.click(toggle)
+
+    expect(adminApi.saveSettings).toHaveBeenCalledWith({ registration: false })
+    expect(await screen.findByText('New parent sign-ups: off.')).toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(siteApi.config.mock.calls.length).toBeGreaterThan(configCalls) // the app learns sign-ups are closed
+  })
+
+  it('Notices: post one, see what each is doing, and take one down', async () => {
+    const user = userEvent.setup()
+    signedInAdmin()
+    const showing = { id: 3, message: 'Back up at 9', level: 'warning', audience: 'parents', is_active: true,
+      expires_at: null, created_at: '2026-11-20T10:00:00Z' }
+    const ended = { ...showing, id: 2, message: 'Old news', expires_at: '2026-01-01T23:59:59Z' }
+    const removed = { ...showing, id: 1, message: 'Gone', is_active: false }
+    adminApi.notices.mockResolvedValue({ items: [showing, ended, removed] })
+    renderApp('/dashboard/admin/notices')
+
+    const row = (text) => screen.getByText(text).closest('li')
+    expect(await screen.findByText('Back up at 9')).toBeInTheDocument()
+    expect(within(row('Back up at 9')).getByText('Showing')).toBeInTheDocument()
+    expect(within(row('Back up at 9')).getByText(/Parents · Important/)).toBeInTheDocument()
+    expect(within(row('Old news')).getByText('Ended')).toBeInTheDocument()
+    expect(within(row('Gone')).getByText('Taken down')).toBeInTheDocument()
+    expect(within(row('Gone')).queryByRole('button')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '+ Add notice' }))
+    const form = within(screen.getByRole('dialog', { name: 'Add notice' }))
+    await user.click(form.getByRole('button', { name: 'Post notice' }))
+    expect(form.getByText('Write a message.')).toBeInTheDocument()
+    adminApi.createNotice.mockResolvedValue({})
+    await user.type(form.getByLabelText('Message'), '  Quiz night on Friday  ')
+    await user.selectOptions(form.getByLabelText('Who sees it'), 'children')
+    await user.click(form.getByRole('button', { name: 'Post notice' }))
+    expect(adminApi.createNotice).toHaveBeenCalledWith({ message: 'Quiz night on Friday', audience: 'children',
+      level: 'info', expires_on: null })
+    expect(await screen.findByText('Notice posted.')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    adminApi.removeNotice.mockResolvedValue({})
+    await user.click(screen.getByRole('button', { name: 'Take down: Back up at 9' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Take this notice down?' }))
+      .getByRole('button', { name: 'Take down' }))
+    expect(adminApi.removeNotice).toHaveBeenCalledWith(3)
+    expect(await screen.findByText('Notice taken down.')).toBeInTheDocument()
+  })
+
+  it('Audit log: what happened, who did it, and a filter', async () => {
+    const user = userEvent.setup()
+    signedInAdmin()
+    adminApi.auditLogs.mockResolvedValue({
+      items: [
+        { id: 2, action: 'settings.changed', actor: { id: 9, display_name: 'Alex', role: 'admin' },
+          target_type: null, target_id: null, details: { registration: false }, created_at: '2026-11-20T10:00:00Z' },
+        { id: 1, action: 'task.approved', actor: null, target_type: 'task', target_id: 7,
+          details: { child_id: 2, points: 10 }, created_at: '2026-11-19T10:00:00Z' },
+      ],
+      total: 2, page: 1, per_page: 25,
+    })
+    renderApp('/dashboard/admin/audit')
+
+    const changed = (await screen.findByText('Changed site settings')).closest('tr')
+    expect(within(changed).getByText('registration: off')).toBeInTheDocument()
+    expect(within(changed).getByText('Alex (admin)')).toBeInTheDocument()
+    const approved = screen.getByText('Approved a task').closest('tr')
+    expect(within(approved).getByText('task #7 · child id: 2 · points: 10')).toBeInTheDocument()
+    expect(within(approved).getByText('A deleted account')).toBeInTheDocument()
+
+    await user.selectOptions(screen.getByLabelText('Show'), 'task.')
+    expect(adminApi.auditLogs).toHaveBeenLastCalledWith({ action: 'task.', page: 1 }, expect.anything())
+  })
+
   it("parents can't open the admin pages", async () => {
     authApi.me.mockResolvedValue({ user: { ...PAT, avatar: '🙂' }, family: { id: 1, name: 'The Testers' } })
     siteApi.config.mockResolvedValue(OPEN)
@@ -187,5 +275,29 @@ describe('the admin pages', () => {
     expect(await screen.findByRole('complementary', { name: 'Main navigation' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Users' })).not.toBeInTheDocument()
     expect(adminApi.users).not.toHaveBeenCalled()
+  })
+})
+
+describe('the notice banner', () => {
+  it('shows the notices to a signed-in parent, and a dismissed one stays hidden on this device', async () => {
+    const user = userEvent.setup()
+    authApi.me.mockResolvedValue({ user: { ...PAT, avatar: '🙂' }, family: { id: 1, name: 'The Testers' } })
+    siteApi.config.mockResolvedValue(OPEN)
+    siteApi.notices.mockResolvedValue({ items: [
+      { id: 5, message: 'Down for updates tonight', level: 'warning' },
+      { id: 4, message: 'New badges are here', level: 'info' },
+    ] })
+    const { unmount } = renderApp('/dashboard/profile')
+
+    const warning = await screen.findByText('Down for updates tonight')
+    expect(warning.closest('.alert-soft')).toHaveClass('warn')
+    expect(screen.getByText('New badges are here').closest('.alert-soft')).toHaveClass('info')
+    await user.click(within(warning.closest('.alert-soft')).getByRole('button', { name: 'Dismiss this notice' }))
+    expect(screen.queryByText('Down for updates tonight')).not.toBeInTheDocument()
+    unmount()
+
+    renderApp('/dashboard/profile')
+    expect(await screen.findByText('New badges are here')).toBeInTheDocument()
+    expect(screen.queryByText('Down for updates tonight')).not.toBeInTheDocument()
   })
 })
