@@ -7,9 +7,9 @@ import Icon from '../components/ui/Icon'
 
 /** The phone menu: every page (the bottom bar only fits a few), and signing out. */
 export default function MorePage() {
-  const { user } = useAuth()
+  const { user, family } = useAuth()
   const { features } = useSiteConfig()
-  const items = [...navItemsFor(user, features),{ to: '/dashboard/profile', label: 'Your profile', icon: 'user' }]
+  const items = [...navItemsFor(user, features, family), { to: '/dashboard/profile', label: 'Your profile', icon: 'user' }]
 
   return (
     <>

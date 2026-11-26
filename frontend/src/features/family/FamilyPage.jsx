@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { familyApi } from '../../api/family'
 import { useAuth } from '../../auth/useAuth'
+import { useSiteConfig } from '../../auth/useSiteConfig'
 import { Avatar } from '../../components/ui/Avatar'
 import Icon from '../../components/ui/Icon'
 import PasswordConfirmModal from '../../components/ui/PasswordConfirmModal'
@@ -15,11 +16,13 @@ import ChildFormModal from './ChildFormModal'
 import ExportModal from './ExportModal'
 import { FamilyName } from './FamilyName'
 import { InviteBox } from './InviteBox'
+import { LeaderboardCard } from './LeaderboardCard'
 import { TimezoneCard } from './TimezoneCard'
 
 /** The family's people. Parents add kids here, and open a kid to edit them or see their points. */
 export default function FamilyPage() {
   const { user, refreshUser, logout } = useAuth()
+  const { features } = useSiteConfig()
   const toast = useToast()
   const isParent = user.role === 'parent'
   const family = useApi((signal) => familyApi.get(signal), [])
@@ -134,6 +137,11 @@ export default function FamilyPage() {
         <div className="widget-grid thirds">
           <TimezoneCard timezone={info.timezone}
             onChange={(tz) => saveSetting(() => familyApi.setTimezone(tz), `Time zone set to ${tz}.`).catch(() => {})} />
+          {features.leaderboard && (
+            <LeaderboardCard enabled={info.leaderboard_enabled}
+              onChange={(on) => saveSetting(() => familyApi.setLeaderboard(on),
+                on ? 'The kids can see the leaderboard now.' : 'Leaderboard hidden from the kids.').catch(() => {})} />
+          )}
           <section className="card pad widget span-4" aria-labelledby="export-title">
             <div className="section-top">
               <div>
@@ -142,7 +150,7 @@ export default function FamilyPage() {
               </div>
             </div>
             <p className="small-text text-2 widget-body">
-              Tasks, routines, points, rewards and badges, for the family or one kid. No emails, usernames or passwords.
+              Tasks, routines, points, rewards, badges and focus time, for the family or one kid. No emails, usernames or passwords.
             </p>
             <div className="widget-foot">
               <button type="button" className="btn secondary small" onClick={() => setExporting(true)}

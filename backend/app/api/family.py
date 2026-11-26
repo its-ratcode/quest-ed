@@ -31,7 +31,7 @@ class FamilyResource(Resource):
 
     @roles_required(ROLE_PARENT)
     def patch(self):
-        """Rename the family or change its time zone."""
+        """Rename the family, change its time zone, or turn the kids' leaderboard on or off."""
         p = Payload()
         family = current_user.family
         if p.has("name"):
@@ -40,11 +40,17 @@ class FamilyResource(Resource):
             timezone = p.string("timezone", max_len=64)
             if timezone and not is_valid_timezone(timezone):
                 p.add_error("timezone", "Unknown time zone.")
+        if p.has("leaderboard_enabled"):
+            leaderboard = p.boolean("leaderboard_enabled", required=True)
         p.validate()
         if p.has("name"):
             family.name = name
         if p.has("timezone"):
             family.timezone = timezone
+        if p.has("leaderboard_enabled") and leaderboard != family.leaderboard_enabled:
+            family.leaderboard_enabled = leaderboard
+            audit.record("family.leaderboard_on" if leaderboard else "family.leaderboard_off", actor=current_user,
+                         target_type="family", target_id=family.id, family_id=family.id)
         db.session.commit()
         if p.has("timezone"):
             ensure_family_day(family.id, force=True)  # "today" may now be another day

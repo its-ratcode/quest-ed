@@ -150,7 +150,7 @@ def build_sample_family(reset=False):
     _check_sign_ins_are_free()
 
     rng = random.Random(2026)  # the same history every time
-    family = Family(name="The Rivera Family", timezone=TIMEZONE)
+    family = Family(name="The Rivera Family", timezone=TIMEZONE, leaderboard_enabled=True)
     sam = User(role=ROLE_PARENT, email=PARENT_EMAIL, display_name="Sam Rivera", avatar="🌻", family=family)
     alex = User(role=ROLE_PARENT, email=SECOND_PARENT_EMAIL, display_name="Alex Rivera", avatar="🌿", family=family)
     for parent in (sam, alex):

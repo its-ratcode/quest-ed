@@ -1,0 +1,15 @@
+/* The family leaderboard: a place, the kid, and their points. */
+.leader-row .rank {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 10px;
+  background: #f1f4f1;
+  display: grid;
+  place-items: center;
+  font-weight: 850;
+  font-size: 13px;
+}
+.leader-row.is-me { background: var(--mint-soft); border-radius: 12px; padding-left: 8px; padding-right: 8px; }
+.leader-points { font-size: 17px; font-weight: 850; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.leader-points small { font-size: 11px; color: var(--muted); font-weight: 700; }

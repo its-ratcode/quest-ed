@@ -41,9 +41,9 @@ function useFreshBalance(isKid) {
  * top bar with the logo plus a bottom bar with the main pages. Kids see their points on top.
  */
 export default function DashboardLayout() {
-  const { user } = useAuth()
+  const { user, family } = useAuth()
   const { features } = useSiteConfig()
-  const items = navItemsFor(user, features)
+  const items = navItemsFor(user, features, family)
   const mobileItems = mobileItemsFor(user.role, items)
   const isKid = user.role === 'child'
   const isParent = user.role === 'parent'

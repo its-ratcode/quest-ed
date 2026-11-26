@@ -9,8 +9,9 @@ from ..extensions import db
 from ..models import ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, Notice, SiteSetting, User, utcnow
 
 # Every switch, with its value on a new site and the label on the Site settings page.
-DEFAULT_FEATURES = {"registration": True, "focus_mode": True}
-FEATURE_LABELS = {"registration": "New parent sign-ups", "focus_mode": "Focus timer"}
+DEFAULT_FEATURES = {"registration": True, "focus_mode": True, "leaderboard": True}
+FEATURE_LABELS = {"registration": "New parent sign-ups", "focus_mode": "Focus timer",
+                  "leaderboard": "Family leaderboards"}
 
 
 def needs_setup():

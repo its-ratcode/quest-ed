@@ -36,6 +36,8 @@ const ACTION_TEXT = {
   'badge.given': 'Gave a badge',
   'family.exported': "Exported the family's data",
   'family.deleted': 'Deleted a family',
+  'family.leaderboard_on': 'Turned the family leaderboard on',
+  'family.leaderboard_off': 'Turned the family leaderboard off',
   'user.activated': 'Switched an account back on',
   'user.deactivated': 'Switched off an account',
   'user.password_set': "Set a parent's password",

@@ -13,6 +13,7 @@ import SetupPage from './features/auth/SetupPage'
 import BadgesPage from './features/badges/BadgesPage'
 import FamilyPage from './features/family/FamilyPage'
 import FocusPage from './features/focus/FocusPage'
+import LeaderboardPage from './features/leaderboard/LeaderboardPage'
 import KidProfilePage from './features/family/KidProfilePage'
 import PointsPage from './features/points/PointsPage'
 import ProfilePage from './features/profile/ProfilePage'
@@ -41,6 +42,7 @@ export function AppRoutes() {
           <Route element={<RequireRole roles={['parent', 'child']} />}>
             <Route path="rewards" element={<RewardsPage />} />
             <Route path="badges" element={<BadgesPage />} />
+            <Route path="leaderboard" element={<LeaderboardPage />} />
           </Route>
           <Route element={<RequireRole roles={['parent']} />}>
             <Route path="family/kids/:kidId" element={<KidProfilePage />} />

@@ -5,6 +5,8 @@ export const familyApi = {
   get: (signal) => unwrap(api.get('/family', { signal })),
   rename: (name) => unwrap(api.patch('/family', { name })),
   setTimezone: (timezone) => unwrap(api.patch('/family', { timezone })),
+  /** Show the kids' leaderboard, or hide it. */
+  setLeaderboard: (enabled) => unwrap(api.patch('/family', { leaderboard_enabled: enabled })),
   newInviteCode: () => unwrap(api.post('/family/invite-code')),
   createChild: (payload) => unwrap(api.post('/family/children', payload)),
   updateChild: (id, payload) => unwrap(api.patch(`/family/children/${id}`, payload)),
