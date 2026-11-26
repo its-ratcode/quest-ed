@@ -1,6 +1,7 @@
 """Sample data for trying the app locally. Never for a real site: the command refuses in production.
 
-Builds the Rivera family with two weeks of believable history, so every page has something to
+Builds the Rivera family with two weeks of believable history (tasks, routines, points, rewards,
+badges and focus sessions), so every page has something to
 show. Sign-ins (local test values only):
 
   parent   parent@demo.test   demo-parent-2026   (Sam Rivera)
@@ -21,9 +22,9 @@ from sqlalchemy import delete, or_, select, update
 
 from ..extensions import db
 from ..models import (
-    REDEMPTION_FULFILLED, REDEMPTION_PENDING, ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, SUBMISSION_APPROVED,
+    FOCUS_CANCELLED, FOCUS_COMPLETED, REDEMPTION_FULFILLED, REDEMPTION_PENDING, ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, SUBMISSION_APPROVED,
     SUBMISSION_PENDING, SUBMISSION_REJECTED, TASK_APPROVED, TASK_EXPIRED, TASK_OPEN, TASK_SUBMITTED, TX_ADJUSTMENT,
-    TX_REDEMPTION, TX_TASK_REWARD, AuditLog, Badge, Family, Notice, Redemption, Reward, Routine, Task,
+    TX_REDEMPTION, TX_TASK_REWARD, AuditLog, Badge, Family, FocusSession, Notice, Redemption, Reward, Routine, Task,
     TaskSubmission, User,
 )
 from . import badges, photos
@@ -91,12 +92,12 @@ FAMILY_BADGES = [  # title, description, picture, colour, rule, category, target
     ("Cat's best friend", "Fed the cat ten times.", "heart", "sky", "routines", None, 10, "leo"),
     ("Super helper", "For going above and beyond without being asked.", "sparkle", "butter", "manual", None, None,
      None),
-    ("Kind heart", "Three kindness tasks approved.", "smile", "mint", "category_tasks", "kindness", 3, None),
+    ("Focus champion", "An hour of focus in total.", "clock", "mint", "focus_minutes", None, 60, None),
 ]
 
 BADGE_PRIZES = {  # badge: (bonus points, free reward or None)
     "Bookworm": (20, None),
-    "Kind heart": (0, "Stay up 30 min later"),
+    "Focus champion": (0, "Stay up 30 min later"),
     "A whole month": (50, "Ice cream trip"),  # a starter badge still out of reach: a prize to aim for
 }
 
@@ -271,6 +272,18 @@ def build_sample_family(reset=False):
             entry = ledger.credit(kid, amount, TX_ADJUSTMENT, reason, created_by=sam)
             entry.created_at = when
         db.session.flush()
+
+    # Focus sessions on some afternoons; a few were stopped early.
+    for kid in (kids["mia"], kids["leo"]):
+        for back in range(HISTORY_DAYS, 0, -1):
+            if rng.random() < 0.35:
+                minutes = rng.choice((10, 15, 25))
+                started = _at(today - timedelta(days=back), 16, rng.choice((0, 20, 40)), tz)
+                db.session.add(FocusSession(
+                    family_id=family.id, child_id=kid.id, minutes=minutes,
+                    label=rng.choice(("Homework", "Reading", "Piano", "Drawing")),
+                    status=FOCUS_COMPLETED if rng.random() < 0.85 else FOCUS_CANCELLED,
+                    started_at=started, ended_at=started + timedelta(minutes=minutes)))
 
     # Badges: the starters every new family gets, plus a few the Riveras made, some with prizes.
     badges.add_starter_badges(family.id, created_by=sam)

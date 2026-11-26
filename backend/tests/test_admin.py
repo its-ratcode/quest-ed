@@ -18,7 +18,8 @@ def setup_admin(api):
 
 def test_first_run_setup_makes_one_administrator(api):
     visitor = api()
-    assert visitor.get("/site/config").get_json() == {"features": {"registration": True}, "needs_setup": True}
+    assert visitor.get("/site/config").get_json() == {"features": {"registration": True, "focus_mode": True},
+                                                      "needs_setup": True}
     weak = visitor.post("/auth/setup", json={"display_name": "Alex", "email": "a@example.test", "password": "short-pw"})
     assert weak.status_code == 400 and "password" in weak.get_json()["errors"]
 
@@ -105,7 +106,8 @@ def test_closing_sign_ups(api):
     assert admin.put("/admin/settings", json={"features": {"registration": "no"}}).status_code == 400
 
     res = admin.put("/admin/settings", json={"features": {"registration": False}})
-    assert res.get_json() == {"features": {"registration": False}, "labels": {"registration": "New parent sign-ups"}}
+    assert res.get_json() == {"features": {"registration": False, "focus_mode": True},
+                              "labels": {"registration": "New parent sign-ups", "focus_mode": "Focus timer"}}
     assert api().get("/site/config").get_json()["features"]["registration"] is False
     closed = api().post("/auth/register", json={"display_name": "Robin", "email": "robin@example.test",
                                                 "password": PASSWORD, "invite_code": code})

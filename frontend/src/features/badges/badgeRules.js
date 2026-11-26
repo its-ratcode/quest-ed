@@ -9,6 +9,8 @@ export const BADGE_RULES = {
   points_saved: { label: 'Points saved up at once', unit: 'points saved', one: 'point saved' },
   routines: { label: 'Routine tasks done', unit: 'routine tasks', one: 'routine task' },
   rewards: { label: 'Rewards bought', unit: 'rewards', one: 'reward' },
+  focus_sessions: { label: 'Focus sessions finished', unit: 'focus sessions', one: 'focus session' },
+  focus_minutes: { label: 'Focus minutes', unit: 'minutes of focus', one: 'minute of focus' },
   manual: { label: 'I give it myself', unit: null },
 }
 

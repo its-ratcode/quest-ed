@@ -7,7 +7,7 @@ from sqlalchemy import delete, or_, select, update
 
 from ..extensions import db
 from ..models import (
-    AuditLog, Badge, Category, EarnedBadge, Family, PointTransaction, Redemption, Reward, Routine, SavingsGoal, Task,
+    AuditLog, Badge, Category, EarnedBadge, Family, FocusSession, PointTransaction, Redemption, Reward, Routine, SavingsGoal, Task,
     TaskSubmission, User,
 )
 
@@ -27,6 +27,7 @@ def erase_child(child):
     db.session.execute(delete(PointTransaction).where(PointTransaction.child_id == child.id))
     db.session.execute(delete(Redemption).where(Redemption.child_id == child.id))
     db.session.execute(delete(SavingsGoal).where(SavingsGoal.child_id == child.id))
+    db.session.execute(delete(FocusSession).where(FocusSession.child_id == child.id))
     db.session.execute(delete(TaskSubmission).where(TaskSubmission.task_id.in_(task_ids)))
     db.session.execute(delete(Task).where(Task.assigned_to_id == child.id))
     # A routine moved to this kid from a sibling still points to the sibling's old copies; they stay.
@@ -47,7 +48,7 @@ def erase_family(family_id):
     user_ids = select(User.id).where(User.family_id == family_id)
     task_ids = select(Task.id).where(Task.family_id == family_id)
     photo_names = _photo_names(task_ids)
-    for model in (EarnedBadge, SavingsGoal, PointTransaction, Redemption, Badge):
+    for model in (EarnedBadge, SavingsGoal, FocusSession, PointTransaction, Redemption, Badge):
         db.session.execute(delete(model).where(model.family_id == family_id))
     db.session.execute(delete(TaskSubmission).where(TaskSubmission.task_id.in_(task_ids)))
     for model in (Task, Routine, Reward, Category):

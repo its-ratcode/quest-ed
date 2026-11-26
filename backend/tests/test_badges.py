@@ -38,7 +38,7 @@ def add_badge(pat, **fields):
 def test_a_new_family_gets_starter_badges_and_the_first_task_earns_one(api):
     pat, mia, mia_id, task = family(api)
     progress = mia.get("/badges/progress").get_json()
-    assert len(progress["badges"]) == 9 and progress["earned_count"] == 0
+    assert len(progress["badges"]) == 11 and progress["earned_count"] == 0
     first = badge_named(mia, "First task")
     assert (first["progress"], first["target"], first["earned_at"]) == (0, 1, None)
 
@@ -185,7 +185,7 @@ def test_families_from_before_badges_get_the_starters(api, app):
     with app.app_context():
         db.session.query(Badge).delete()
         db.session.commit()
-    assert len(pat.get("/badges").get_json()["items"]) == 9
+    assert len(pat.get("/badges").get_json()["items"]) == 11
 
 
 def test_removing_a_kid_removes_their_badges(api, app):
@@ -196,4 +196,4 @@ def test_removing_a_kid_removes_their_badges(api, app):
     with app.app_context():
         assert db.session.query(EarnedBadge).count() == 0
         assert db.session.query(Badge).filter(Badge.title == "Mia's own").count() == 0
-        assert db.session.query(Badge).count() == 9  # the family's badges stay
+        assert db.session.query(Badge).count() == 11  # the family's badges stay

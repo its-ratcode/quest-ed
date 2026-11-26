@@ -1,14 +1,16 @@
 """Site-wide settings the administrator switches on and off, and the notices people see."""
 import json
+from functools import wraps
 
+from flask_restx import abort
 from sqlalchemy import or_, select
 
 from ..extensions import db
 from ..models import ROLE_ADMIN, ROLE_CHILD, ROLE_PARENT, Notice, SiteSetting, User, utcnow
 
 # Every switch, with its value on a new site and the label on the Site settings page.
-DEFAULT_FEATURES = {"registration": True}
-FEATURE_LABELS = {"registration": "New parent sign-ups"}
+DEFAULT_FEATURES = {"registration": True, "focus_mode": True}
+FEATURE_LABELS = {"registration": "New parent sign-ups", "focus_mode": "Focus timer"}
 
 
 def needs_setup():
@@ -36,6 +38,21 @@ def set_features(changes):
 
 def feature_enabled(name):
     return get_features().get(name, False)
+
+
+def require_feature(name):
+    """For an endpoint that belongs to a switch: while it's off, the endpoint answers 403."""
+
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not feature_enabled(name):
+                abort(403, "This is turned off on this site.", error="feature_disabled")
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def notices_for(user, limit=5):

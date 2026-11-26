@@ -16,8 +16,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
 from ..models import (
-    REDEMPTION_CANCELLED, SUBMISSION_APPROVED, TX_BADGE_BONUS, TX_TASK_REWARD, Badge, Category, EarnedBadge,
-    PointTransaction, Redemption, Task, TaskSubmission, iso,
+    FOCUS_COMPLETED, REDEMPTION_CANCELLED, SUBMISSION_APPROVED, TX_BADGE_BONUS, TX_TASK_REWARD, Badge, Category,
+    EarnedBadge, FocusSession, PointTransaction, Redemption, Task, TaskSubmission, iso,
 )
 from . import points as ledger
 from .routines import family_today, family_tz, local_date
@@ -34,6 +34,9 @@ STARTER_BADGES = (
     ("routine_10", "Good habits", "Finished 10 routine tasks.", "routines", 10, "clock", "sky"),
     ("saver_100", "Saved up 100", "Had 100 points saved at once.", "points_saved", 100, "medal", "butter"),
     ("first_reward", "First reward", "Spent points on a reward.", "rewards", 1, "gift", "lilac"),
+    ("focus_first", "First focus", "Finished a focus session.", "focus_sessions", 1, "clock", "mint"),
+    ("focus_300", "Five hours of focus", "Spent 300 minutes in focus sessions.", "focus_minutes", 300, "clock",
+     "butter"),
 )
 
 # Which stat each rule counts ("category_tasks" and "manual" work differently).
@@ -44,6 +47,8 @@ RULE_STAT = {
     "points_saved": "max_balance",
     "routines": "routine_approved",
     "rewards": "rewards_bought",
+    "focus_sessions": "focus_completed",
+    "focus_minutes": "focus_minutes",
 }
 
 
@@ -97,7 +102,13 @@ def child_stats(child):
     by_category = {}
     for row in approved:
         by_category[row.category] = by_category.get(row.category, 0) + 1
+    focus_completed, focus_minutes = db.session.execute(
+        select(func.count(FocusSession.id), func.coalesce(func.sum(FocusSession.minutes), 0))
+        .where(FocusSession.child_id == child.id, FocusSession.status == FOCUS_COMPLETED)
+    ).one()
     return {
+        "focus_completed": int(focus_completed),
+        "focus_minutes": int(focus_minutes),
         "approved": len(approved),
         "routine_approved": sum(1 for row in approved if row.routine_id is not None),
         "by_category": by_category,
@@ -201,6 +212,8 @@ def describe_rule(badge):
         "points_saved": f"Have {n} points saved at once.",
         "routines": f"Finish {n} routine tasks.",
         "rewards": f"Spend points on {n} {'reward' if n == 1 else 'rewards'}.",
+        "focus_sessions": f"Finish {n} focus {'session' if n == 1 else 'sessions'}.",
+        "focus_minutes": f"Spend {n} minutes in focus sessions.",
     }.get(badge.rule, "")
 
 

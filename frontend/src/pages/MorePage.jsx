@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useSiteConfig } from '../auth/useSiteConfig'
 import { navItemsFor } from '../components/layout/navigation'
 import { SignOutButton } from '../components/layout/SignOutButton'
 import Icon from '../components/ui/Icon'
@@ -7,7 +8,8 @@ import Icon from '../components/ui/Icon'
 /** The phone menu: every page (the bottom bar only fits a few), and signing out. */
 export default function MorePage() {
   const { user } = useAuth()
-  const items = [...navItemsFor(user), { to: '/dashboard/profile', label: 'Your profile', icon: 'user' }]
+  const { features } = useSiteConfig()
+  const items = [...navItemsFor(user, features),{ to: '/dashboard/profile', label: 'Your profile', icon: 'user' }]
 
   return (
     <>

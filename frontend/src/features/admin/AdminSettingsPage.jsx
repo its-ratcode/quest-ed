@@ -8,6 +8,7 @@ import { getErrorMessage } from '../../utils/errors'
 
 const HELP = {
   registration: 'When off, nobody can create a new parent account. Existing families are not affected.',
+  focus_mode: "When off, kids don't see the focus timer. Focus time already saved is kept.",
 }
 
 /** Site-wide switches. Each one saves as soon as it's flipped. */

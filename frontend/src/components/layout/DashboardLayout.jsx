@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
+import { useSiteConfig } from '../../auth/useSiteConfig'
 import { CategoriesProvider } from '../../features/categories/CategoriesProvider'
 import { usePendingHandovers } from '../../features/rewards/usePendingHandovers'
 import { usePendingApprovals } from '../../features/tasks/usePendingApprovals'
@@ -41,7 +42,8 @@ function useFreshBalance(isKid) {
  */
 export default function DashboardLayout() {
   const { user } = useAuth()
-  const items = navItemsFor(user)
+  const { features } = useSiteConfig()
+  const items = navItemsFor(user, features)
   const mobileItems = mobileItemsFor(user.role, items)
   const isKid = user.role === 'child'
   const isParent = user.role === 'parent'

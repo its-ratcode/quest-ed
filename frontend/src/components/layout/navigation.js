@@ -14,6 +14,7 @@ const ALL_ITEMS = {
     { to: '/dashboard/tasks', label: 'My tasks', short: 'Tasks', icon: 'tasks' },
     { to: '/dashboard/rewards', label: 'Reward shop', short: 'Shop', icon: 'gift' },
     { to: '/dashboard/badges', label: 'Badges', icon: 'star' },
+    { to: '/dashboard/focus', label: 'Focus timer', short: 'Focus', icon: 'clock', feature: 'focus_mode' },
     { to: '/dashboard/points', label: 'My points', short: 'Points', icon: 'coins' },
   ],
   admin: [
@@ -29,9 +30,9 @@ export const NAV_HEADING = { parent: 'Parent workspace', child: 'My space', admi
 
 export const ROLE_LABEL = { parent: 'Family parent', child: 'Kid account', admin: 'Administrator' }
 
-/** The menu for this user. */
-export function navItemsFor(user) {
-  return ALL_ITEMS[user.role] || []
+/** The menu for this user, leaving out pages the administrator switched off. */
+export function navItemsFor(user, features = {}) {
+  return (ALL_ITEMS[user.role] || []).filter((item) => !item.feature || features[item.feature] !== false)
 }
 
 // Phones: a bottom bar with up to four pages, then "More" for everything else.

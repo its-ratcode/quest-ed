@@ -4,7 +4,8 @@ from .user import user_brief
 
 # How a badge is earned. Each one except "manual" counts something until it reaches `target`;
 # "manual" badges are given by a parent.
-BADGE_RULES = ("tasks", "category_tasks", "streak", "points", "points_saved", "routines", "rewards", "manual")
+BADGE_RULES = ("tasks", "category_tasks", "streak", "points", "points_saved", "routines", "rewards",
+               "focus_sessions", "focus_minutes", "manual")
 
 
 class Badge(db.Model):

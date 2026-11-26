@@ -10,8 +10,8 @@ from sqlalchemy import select, true
 
 from ..extensions import db
 from ..models import (
-    REDEMPTION_CANCELLED, ROLE_CHILD, ROUTINE_ARCHIVED, ROUTINE_PAUSED, SUBMISSION_APPROVED, SUBMISSION_PENDING,
-    SUBMISSION_REJECTED, Badge, EarnedBadge, PointTransaction, Redemption, Routine, Task, TaskSubmission, User, utcnow,
+    FOCUS_ACTIVE, FOCUS_COMPLETED, REDEMPTION_CANCELLED, ROLE_CHILD, ROUTINE_ARCHIVED, ROUTINE_PAUSED, SUBMISSION_APPROVED, SUBMISSION_PENDING,
+    SUBMISSION_REJECTED, Badge, EarnedBadge, FocusSession, PointTransaction, Redemption, Routine, Task, TaskSubmission, User, utcnow,
 )
 from . import badges
 from .categories import family_categories
@@ -24,7 +24,7 @@ REWARD_WORDS = {"pending": "waiting to be handed over", "fulfilled": "handed ove
                 "cancelled": "cancelled (points returned)"}
 
 ABOUT = {
-    "what": "Activity exported from Quest-Ed: tasks, routines, points, rewards and badges.",
+    "what": "Activity exported from Quest-Ed: tasks, routines, points, rewards, badges and focus time.",
     "times": "Local time in the family's time zone.",
     "points": "Kids earn points when a parent approves a task and spend them on rewards. "
               "A balance can never go below zero.",
@@ -89,6 +89,10 @@ def build_export(family, child=None, days=None):
         routines = db.session.scalars(
             select(Routine).where(Routine.assigned_to_id == kid.id, Routine.status != ROUTINE_ARCHIVED)
             .order_by(Routine.id)).all()
+        focus = db.session.scalars(
+            select(FocusSession).where(FocusSession.child_id == kid.id, FocusSession.status != FOCUS_ACTIVE,
+                                       _after(FocusSession.started_at, since))
+            .order_by(FocusSession.started_at)).all()
 
         children.append({
             "name": kid.display_name,
@@ -103,6 +107,7 @@ def build_export(family, child=None, days=None):
                 "points_spent": -sum(tx.amount for tx in ledger if tx.amount < 0),
                 "rewards_bought": sum(1 for r in rewards if r.status != REDEMPTION_CANCELLED and r.cost > 0),
                 "badges_earned": len(earned),
+                "focus_minutes": sum(f.minutes for f in focus if f.status == FOCUS_COMPLETED),
                 "current_streak_days": stats["current_streak"],
                 "best_streak_days": stats["best_streak"],
             },
@@ -128,6 +133,10 @@ def build_export(family, child=None, days=None):
             "badges": [{
                 "date": when(e.earned_at), "badge": badge_titles.get(e.badge_id, "A removed badge"),
             } for e in earned],
+            "focus_sessions": [{
+                "date": when(f.started_at), "minutes": f.minutes, "working_on": f.label or None,
+                "finished": f.status == FOCUS_COMPLETED,
+            } for f in focus],
         })
 
     return {

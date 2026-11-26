@@ -51,6 +51,7 @@ def create_api_blueprint(enable_docs=True):
     from .categories import ns as categories_ns
     from .dashboard import ns as dashboard_ns
     from .family import ns as family_ns
+    from .focus import ns as focus_ns
     from .health import ns as health_ns
     from .points import ns as points_ns
     from .rewards import ns as rewards_ns
@@ -66,6 +67,7 @@ def create_api_blueprint(enable_docs=True):
     api.add_namespace(tasks_ns, path="/tasks")
     api.add_namespace(routines_ns, path="/routines")
     api.add_namespace(badges_ns, path="/badges")
+    api.add_namespace(focus_ns, path="/focus")
     api.add_namespace(dashboard_ns, path="/dashboard")
     api.add_namespace(points_ns, path="/points")
     api.add_namespace(rewards_ns, path="/rewards")
