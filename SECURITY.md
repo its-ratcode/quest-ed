@@ -28,8 +28,7 @@ as I can, keep you posted, and credit you in the fix unless you'd rather not be 
 - Task photos: JPEG or PNG only, at most 5 MB, with location and camera details removed. They're
   stored under random names outside the web root and only sent to the same family.
 - Deleting a kid or a family removes their data and photos for good, after the parent's password.
-- No analytics and no tracking. The one outside request is the font, which the web app loads from
-  Google Fonts.
+- No analytics, no tracking and no outside requests: even the font is served by the app itself.
 
 ## If you host it yourself
 

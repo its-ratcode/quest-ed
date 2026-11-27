@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
+// The font is served with the app, so the browser never contacts an outside server.
+import '@fontsource-variable/plus-jakarta-sans'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/components/brand.css'
