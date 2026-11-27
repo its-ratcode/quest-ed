@@ -1,103 +1,114 @@
 # Quest-Ed
 
-A modern platform where parents create achievement systems, and children learn
-responsibility through gamified tasks and rewards.
+Quest-Ed is a small web app for chores, routines and rewards. Parents set tasks and decide what
+they're worth. Kids tick them off, a parent approves, and the points go towards rewards the family
+agreed on, like extra screen time or picking Friday's movie.
 
-> **Status:** early development. Not ready to use yet.
+I made it to bring a little play into everyday family life, and to help build trust and good
+relationships between family members along the way.
 
-## Try it with Docker
+[DEMO VIDEO]
 
-You need Docker with Compose (Docker Desktop, or Docker Engine with the compose plugin).
-This runs the API on a production server and the built web app, together on one address.
+## What it does
 
-1. Get the code and start it. The first time builds the images, which takes a few minutes:
+- Tasks and routines. One-off jobs, or routines that come back on the days you pick. A missed
+  routine drops off at the end of the day instead of piling up.
+- Approvals. Kids press "I did it", with a note or a photo if they want. Points are only added once
+  a parent approves, and every change to a balance is in a history the kid can see.
+- Rewards. Parents fill the shop and set the prices, kids spend their points, and parents mark
+  each reward as handed over.
+- Badges, streaks and a focus timer for the kids. A family leaderboard too, but it's off until a
+  parent turns it on.
+- A page per kid with their last 30 days. Parents can also open a kid's account to see what they
+  see, and need their own password to switch back.
+- Kids don't need an email address. Parents make their sign-ins.
+- An admin area for whoever runs the site: accounts, site switches, notices and an audit log.
 
-   ```bash
-   git clone https://github.com/its-ratcode/quest-ed.git
-   cd quest-ed
-   docker compose up -d
-   ```
+Your family's data stays on your own server. There are no ads and no tracking, photos lose their
+location data before they're saved, and you can export or delete a family's data at any time.
 
-2. Open <http://localhost:7373>. A new site first asks you to create the administrator account.
+## Try it
 
-That's all: nothing needs setting up first. The database, task photos and the site's secret keys
-are kept in the `quest-ed-data` volume (the keys are made on the first start), and the database is
-brought up to date every time the API starts. If port 7373 is already taken on your computer, copy
-`.env.example` to `.env` and pick another one there.
+You need Docker with Compose.
 
 ```bash
-docker compose logs -f                     # watch what it's doing
-docker compose down                        # stop it (your data stays)
-git pull && docker compose up --build -d   # update to the latest version
-docker compose cp api:/data ./quest-ed-backup   # copy the database, photos and keys out, as a backup
+git clone https://github.com/its-ratcode/quest-ed.git
+cd quest-ed
+docker compose up -d
 ```
 
-`docker compose down -v` also deletes the volume, so **everything in it is gone**. A backup holds
-the site's secret keys, so keep it somewhere only you can open.
+Then open <http://localhost:7373>. The first build takes a few minutes. On a new site, the first
+page asks you to create the admin account. There's nothing to set up before that: the database,
+photos and the site's secret keys live in a Docker volume called `quest-ed-data`, and the keys are
+made on the first start. If port 7373 is taken, copy `.env.example` to `.env` and pick another one.
 
-To look around with something in it, add the sample Rivera family (see Development below). Its
-passwords are public, so only do this on a copy you're trying out:
+```bash
+docker compose logs -f                          # see what it's doing
+docker compose down                             # stop it (your data stays)
+git pull                                        # update: get the latest code,
+docker compose up --build -d                    # then rebuild and restart
+docker compose cp api:/data ./quest-ed-backup   # back up the database, photos and keys
+```
+
+`docker compose down -v` deletes the volume too, so everything in it is gone. A backup contains the
+site's secret keys, so keep it somewhere private.
+
+To look around with some data in it, add my sample family (the Riveras: two parents, three kids,
+two weeks of history). Their passwords are public, so only do this on a copy you're trying out.
+The sign-ins are at the top of `backend/app/services/sample_data.py`.
 
 ```bash
 docker compose exec -e APP_ENV=development api flask --app run seed-demo
 ```
 
-**Only this computer can open it.** Sign-ins use secure cookies, which browsers accept on
-`localhost` but otherwise only over HTTPS. To use it from phones or other computers, it needs a
-web address with HTTPS in front of it. That isn't set up here yet.
+For now it only works on the computer it runs on. Sign-ins use secure cookies, which browsers only
+accept on `localhost` or over HTTPS, so using it from phones needs HTTPS in front of it, and I
+haven't set that up yet.
 
-## Development
+## Working on the code
 
-To change the code, run the API and the web app directly (no Docker needed).
+You'll need Python 3.11 or newer and Node 24 (22.22 or newer works). Run the API and the web app
+in two terminals.
 
-The API is a Flask app in `backend/` (Python 3.11 or newer).
+The API, in `backend/` (Flask and SQLite):
 
 ```bash
 cd backend
-pip install -r requirements-dev.txt   # once
-python -m pytest                      # run the tests
-python run.py                         # API on http://127.0.0.1:5050
+pip install -r requirements-dev.txt
+flask --app run db upgrade   # create or update the database
+flask --app run seed-demo    # optional: the sample family
+python run.py                # http://127.0.0.1:5050
 ```
 
-Check it's up: <http://127.0.0.1:5050/api/v1/health>. API docs: <http://127.0.0.1:5050/api/v1/docs>.
-
-The database is SQLite (`backend/instance/quest_ed.db`), built and updated by migrations:
-
-```bash
-flask --app run db upgrade                     # create or update the database
-flask --app run db migrate -m "what changed"   # after changing a model: write a new migration
-flask --app run db check                       # are the models and migrations in sync?
-```
-
-To try the app with something in it, add the sample Rivera family (two parents, three kids, two
-weeks of tasks, points, rewards and badges) and a sample admin. Their sign-ins are at the top of
-`backend/app/services/sample_data.py`. Other families are never touched, and it refuses to run in production.
-
-```bash
-flask --app run seed-demo           # add the sample family
-flask --app run seed-demo --reset   # delete it and build it again
-```
-
-On Windows machines whose Application Control blocks SQLAlchemy's compiled files,
-`backend/pure_sqlalchemy.py` makes SQLAlchemy use its plain-Python copies instead
-(set `QUESTED_USE_COMPILED_SQLALCHEMY=1` to turn that off).
-
-The web app is React + Vite in `frontend/` (Node 24 LTS recommended; 22.22 or newer works). Start the API first;
-the web app forwards `/api` calls to it.
+The web app, in `frontend/` (React and Vite). It passes `/api` calls on to the API:
 
 ```bash
 cd frontend
-npm install        # once, and after package.json changes
-npm test           # run the tests
-npm run lint       # check the code style
-npm run dev        # web app on http://127.0.0.1:5173
+npm install
+npm run dev                  # http://127.0.0.1:5173
 ```
+
+Tests and checks:
+
+```bash
+cd backend && python -m pytest
+cd frontend && npm test && npm run lint
+```
+
+After changing a model, write a migration with `flask --app run db migrate -m "what changed"` and
+check it with `flask --app run db check`. The API docs are at <http://127.0.0.1:5050/api/v1/docs>
+while it runs in development.
+
+If you're on Windows and Application Control blocks SQLAlchemy's compiled files, that's handled:
+`backend/pure_sqlalchemy.py` makes it use its plain-Python copies instead.
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first, and
+report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Quest-Ed is free software under the
-[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-or-later).
-You can use, change and share it; if you run a changed version for other people,
-you share your changes too.
-
-Official text: <https://www.gnu.org/licenses/agpl-3.0.txt>
+Quest-Ed is free software under the [GNU Affero General Public License v3.0 or later](LICENSE).
+You can use it, change it and share it. If you run a changed version for other people, you share
+your changes with them too.
