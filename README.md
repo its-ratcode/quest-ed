@@ -48,6 +48,7 @@ docker compose down                             # stop it (your data stays)
 git pull                                        # update: get the latest code,
 docker compose up --build -d                    # then rebuild and restart
 docker compose cp api:/data ./quest-ed-backup   # back up the database, photos and keys
+docker compose exec api flask --app run create-admin   # add an admin, or get back in if you're locked out
 ```
 
 `docker compose down -v` deletes the volume too, so everything in it is gone. A backup contains the

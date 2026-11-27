@@ -23,6 +23,7 @@ const FILTERS = [
 
 const ACTION_TEXT = {
   'site.setup': 'Set up the site',
+  'site.admin_added': 'Added an administrator from the command line',
   'auth.login': 'Signed in',
   'auth.view_as_child': "Opened a kid's account",
   'auth.switch_back': 'Switched back to the parent',
