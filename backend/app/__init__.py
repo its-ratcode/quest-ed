@@ -1,6 +1,10 @@
 """Quest-Ed API: `create_app()` builds the Flask app."""
 import os
 
+# The release this code belongs to. Keep it the same as "version" in frontend/package.json and
+# the latest entry in CHANGELOG.md.
+__version__ = "0.1.0"
+
 from dotenv import load_dotenv
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix

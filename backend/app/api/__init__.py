@@ -11,6 +11,7 @@ from flask_restx import Api
 from jwt.exceptions import ExpiredSignatureError, PyJWTError
 from werkzeug.exceptions import RequestEntityTooLarge
 
+from .. import __version__
 from ..services.photos import TOO_BIG
 
 
@@ -19,7 +20,7 @@ def create_api_blueprint(enable_docs=True):
     api = Api(
         blueprint,
         title="Quest-Ed API",
-        version="1.0",
+        version=__version__,
         description="Tasks, approvals, points and rewards for families.",
         doc="/docs" if enable_docs else False,
     )
