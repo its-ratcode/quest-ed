@@ -3,12 +3,33 @@
 Reading at creation time (not import time) means a `.env` file loaded by
 `create_app` is always respected.
 """
+import json
 import os
+import secrets
 import tempfile
 from datetime import timedelta
 
 DEV_SECRET = "dev-only-secret-key-change-me-0123456789abcdef"
 DEV_JWT_SECRET = "dev-only-jwt-secret-change-me-0123456789abcdef"
+SECRET_NAMES = ("SECRET_KEY", "JWT_SECRET_KEY")
+
+
+def _stored_secrets(path):
+    """The secrets kept in the file at `path`, made with random values the first time.
+
+    The Docker image points SECRETS_FILE into its data volume, so a new install works
+    without anyone making secrets by hand, and they stay the same across restarts.
+    Only the owner can read the file.
+    """
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    values = {name: secrets.token_urlsafe(48) for name in SECRET_NAMES}
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(values, f)
+    return values
 
 
 def _bool(name, default=False):
@@ -62,8 +83,15 @@ def build_config(env_name):
         config.update(TESTING=True, ENABLE_API_DOCS=False, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
                       UPLOAD_FOLDER=tempfile.mkdtemp(prefix="quest-ed-test-"))
     elif env_name == "production":
-        missing = [key for key in ("SECRET_KEY", "JWT_SECRET_KEY") if not os.environ.get(key)]
+        # Secrets set in the environment win; otherwise they come from SECRETS_FILE, if set.
+        secrets_file = os.environ.get("SECRETS_FILE")
+        stored = {}
+        if secrets_file and not all(os.environ.get(name) for name in SECRET_NAMES):
+            stored = _stored_secrets(secrets_file)
+        values = {name: os.environ.get(name) or stored.get(name) for name in SECRET_NAMES}
+        missing = [name for name, value in values.items() if not value]
         if missing:
             raise RuntimeError(f"Production requires these environment variables: {', '.join(missing)}")
+        config.update(values)
         config.update(JWT_COOKIE_SECURE=True, ENABLE_API_DOCS=_bool("ENABLE_API_DOCS", False))
     return config

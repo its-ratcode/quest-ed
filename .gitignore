@@ -9,6 +9,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 
-# Backend local data and secrets
+# Local data and secrets
 backend/instance/
 backend/.env
+/.env

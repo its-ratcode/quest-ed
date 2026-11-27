@@ -1,0 +1,10 @@
+# Kept out of the API image: local data, secrets, caches and the tests.
+instance/
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+tests/
+Dockerfile
+.dockerignore

@@ -1,0 +1,30 @@
+# Quest-Ed with Docker: the API and the web app on one address.
+#   docker compose up -d
+# then open http://localhost:7373 (or the port set in QUESTED_PORT in .env).
+# The database, task photos and the site's secrets are kept in the "quest-ed-data" volume.
+name: quest-ed
+
+services:
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      # nginx in the web container is the one proxy in front of the API.
+      TRUSTED_PROXIES: "1"
+    volumes:
+      - quest-ed-data:/data
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      # Only this computer can open it. See the README before opening it to other devices.
+      # An uncommon port, so it doesn't clash with other tools (8080 often is taken).
+      # The ports inside the containers (80 and 8000) are never opened on this computer.
+      - "127.0.0.1:${QUESTED_PORT:-7373}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  quest-ed-data:

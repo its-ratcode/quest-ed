@@ -1,0 +1,3 @@
+-r requirements.txt
+# The production web server used in the Docker image (Linux only; not needed for development).
+gunicorn>=23
