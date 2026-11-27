@@ -7,7 +7,7 @@ agreed on, like extra screen time or picking Friday's movie.
 I made it to bring a little play into everyday family life, and to help build trust and good
 relationships between family members along the way.
 
-[DEMO VIDEO]
+https://github.com/user-attachments/assets/d262f446-c3a4-4739-b884-8274442a86d5
 
 ## What it does
 
