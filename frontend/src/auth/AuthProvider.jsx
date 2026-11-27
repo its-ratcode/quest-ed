@@ -23,8 +23,10 @@ export function AuthProvider({ children }) {
     return me
   }, [])
 
-  const clearSession = useCallback((notice = null) => {
-    setState({ status: 'anonymous', user: null, family: null, actingParent: null, notice })
+  // signedOut: someone pressed "Sign out" (rather than a session running out). The next person to
+  // sign in may be someone else, so they start on their own home page, not the last one open.
+  const clearSession = useCallback((notice = null, signedOut = false) => {
+    setState({ status: 'anonymous', user: null, family: null, actingParent: null, notice, signedOut })
   }, [])
 
   useEffect(() => {
@@ -58,7 +60,7 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout()
     } finally {
-      clearSession()
+      clearSession(null, true)
     }
   }, [clearSession])
 

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { RedirectIfAuthenticated, RequireAuth } from '../routes/guards'
 import { safeReturnPath } from '../routes/safeReturnPath'
@@ -31,6 +31,31 @@ describe('route guards', () => {
     Object.assign(authState, { status: 'anonymous', user: null })
     renderAt('/dashboard')
     expect(screen.getByText('login screen')).toBeInTheDocument()
+  })
+
+  it('after a session runs out, signing in returns to the page; after "Sign out", it starts at home', () => {
+    function LoginSpy() {
+      return <p>back to: {useLocation().state?.from ?? 'home'}</p>
+    }
+    const renderGuarded = () => render(
+      <MemoryRouter initialEntries={['/dashboard/rewards']}>
+        <Routes>
+          <Route path="/login" element={<LoginSpy />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/dashboard/rewards" element={<p>rewards</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    )
+    Object.assign(authState, { status: 'anonymous', user: null, signedOut: false })
+    const { unmount } = renderGuarded()
+    expect(screen.getByText('back to: /dashboard/rewards')).toBeInTheDocument()
+    unmount()
+
+    Object.assign(authState, { status: 'anonymous', user: null, signedOut: true })
+    renderGuarded()
+    expect(screen.getByText('back to: home')).toBeInTheDocument()
+    authState.signedOut = false
   })
 
   it('lets signed-in people through, and skips the sign-in page for them', () => {

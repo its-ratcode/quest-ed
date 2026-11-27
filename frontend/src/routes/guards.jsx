@@ -6,13 +6,16 @@ import { FullPageSpinner } from '../components/ui/FullPageSpinner'
 import ForbiddenPage from '../pages/ForbiddenPage'
 import { safeReturnPath } from './safeReturnPath'
 
-/** Pages inside need a session confirmed by the server; otherwise sign in and come back. */
+/**
+ * Pages inside need a session confirmed by the server; otherwise sign in and come back.
+ * After pressing "Sign out" there's no coming back: whoever signs in next starts at home.
+ */
 export function RequireAuth() {
-  const { status } = useAuth()
+  const { status, signedOut } = useAuth()
   const location = useLocation()
   if (status === 'loading') return <FullPageSpinner label="Checking your session" />
   if (status !== 'authenticated') {
-    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
+    return <Navigate to="/login" replace state={signedOut ? null : { from: location.pathname + location.search }} />
   }
   return <Outlet />
 }
