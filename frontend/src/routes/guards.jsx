@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { useSiteConfig } from '../auth/useSiteConfig'
 import { FullPageSpinner } from '../components/ui/FullPageSpinner'
+import ForbiddenPage from '../pages/ForbiddenPage'
 import { safeReturnPath } from './safeReturnPath'
 
 /** Pages inside need a session confirmed by the server; otherwise sign in and come back. */
@@ -19,7 +20,7 @@ export function RequireAuth() {
 /** Pages for some roles only (the menu hides them too; the API enforces the same rules). */
 export function RequireRole({ roles }) {
   const { user } = useAuth()
-  if (!roles.includes(user?.role)) return <Navigate to="/dashboard" replace />
+  if (!roles.includes(user?.role)) return <ForbiddenPage />
   return <Outlet />
 }
 

@@ -1,4 +1,4 @@
-/* The logo: a mint tile with the sparkle icon, and the name. */
+/* The logo: the "Q" mark and the name. */
 .brand {
   display: flex;
   align-items: center;
@@ -12,12 +12,11 @@
 }
 .brand:hover { text-decoration: none; color: var(--ink); }
 .brand-mark {
-  width: 39px;
-  height: 39px;
-  background: var(--mint);
-  border-radius: 13px;
   display: grid;
   place-items: center;
   color: var(--ink);
   flex: none;
 }
+/* The "Q": a ring, and a solid sparkle crossing it as its tail. */
+.brand-q-ring { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.brand-q-tail { fill: currentColor; }

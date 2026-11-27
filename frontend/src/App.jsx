@@ -1,7 +1,8 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { BrowserRouter, Route, Routes } from 'react-router'
 import { AuthProvider } from './auth/AuthProvider'
 import { SiteConfigProvider } from './auth/SiteConfigProvider'
 import DashboardLayout from './components/layout/DashboardLayout'
+import PublicLayout from './components/layout/PublicLayout'
 import { ToastProvider } from './components/ui/toast/ToastProvider'
 import AdminAuditPage from './features/admin/AdminAuditPage'
 import AdminNoticesPage from './features/admin/AdminNoticesPage'
@@ -22,13 +23,16 @@ import TasksPage from './features/tasks/TasksPage'
 import DashboardPage from './pages/DashboardPage'
 import HomePage from './pages/HomePage'
 import MorePage from './pages/MorePage'
+import NotFoundPage from './pages/NotFoundPage'
 import { RedirectIfAuthenticated, RequireAuth, RequireRole, SetupGate } from './routes/guards'
 
 /** Every page in the app. Pages under <RequireAuth> need a session and share the app layout. */
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route element={<PublicLayout />}>
+        <Route index element={<HomePage />} />
+      </Route>
       <Route path="/login" element={<RedirectIfAuthenticated><LoginPage /></RedirectIfAuthenticated>} />
       <Route path="/register" element={<RedirectIfAuthenticated><RegisterPage /></RedirectIfAuthenticated>} />
       <Route path="/setup" element={<SetupPage />} />
@@ -57,9 +61,10 @@ export function AppRoutes() {
             <Route path="admin/notices" element={<AdminNoticesPage />} />
             <Route path="admin/audit" element={<AdminAuditPage />} />
           </Route>
+          <Route path="*" element={<NotFoundPage inApp />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

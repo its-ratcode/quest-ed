@@ -8,6 +8,8 @@ import { usePendingApprovals } from '../../features/tasks/usePendingApprovals'
 import { formatNumber } from '../../utils/format'
 import { initialsOf } from '../../utils/names'
 import { Avatar } from '../ui/Avatar'
+import BrandMark from '../ui/BrandMark'
+import ErrorBoundary from '../ui/ErrorBoundary'
 import Icon from '../ui/Icon'
 import { mobileItemsFor, NAV_HEADING, navItemsFor, ROLE_LABEL } from './navigation'
 import NoticeBanner from './NoticeBanner'
@@ -49,6 +51,7 @@ export default function DashboardLayout() {
   const isKid = user.role === 'child'
   const isParent = user.role === 'parent'
   const counts = { approvals: usePendingApprovals(isParent), handovers: usePendingHandovers(isParent) }
+  const { pathname } = useLocation()
   useFreshBalance(isKid)
 
   return (
@@ -57,7 +60,7 @@ export default function DashboardLayout() {
 
       <aside className="sidebar" aria-label="Main navigation">
         <Link to="/dashboard" className="brand">
-          <span className="brand-mark" aria-hidden="true"><Icon name="sparkle" size={22} /></span>
+          <BrandMark size={30} />
           quest-ed.
         </Link>
         <div className="nav-label">{NAV_HEADING[user.role]}</div>
@@ -89,7 +92,7 @@ export default function DashboardLayout() {
             a kid's points. On computers a parent's pages start straight with the page title. */}
         <header className={`topbar${isKid ? '' : ' topbar-phone-only'}`}>
           <Link to="/dashboard" className="brand mobile-only" aria-label="Quest-Ed home">
-            <span className="brand-mark" aria-hidden="true"><Icon name="sparkle" size={18} /></span>
+            <BrandMark />
             <span className="brand-name">quest-ed.</span>
           </Link>
           {isKid && (
@@ -107,7 +110,11 @@ export default function DashboardLayout() {
           <NoticeBanner key={user.id} />
           {/* Keyed by account, so nothing loaded for one account is shown to the next. */}
           <CategoriesProvider key={user.id} enabled={user.role !== 'admin'}>
-            <Outlet />
+            {/* A page that crashes is replaced by a message; the menu still works, and
+                going to another page starts fresh. */}
+            <ErrorBoundary key={pathname} inApp>
+              <Outlet />
+            </ErrorBoundary>
           </CategoriesProvider>
         </main>
       </div>

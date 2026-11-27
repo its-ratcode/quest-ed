@@ -27,10 +27,14 @@ import './styles/components/focus.css'
 import './styles/components/leaderboard.css'
 import './styles/components/dashboard.css'
 import './styles/components/admin.css'
+import './styles/components/home.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
